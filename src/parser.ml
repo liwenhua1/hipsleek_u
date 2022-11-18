@@ -235,6 +235,15 @@ let rec split_specs specs = match specs with
 	  end
 	| [] -> ([], [])
 
+  let rec split_specs_n specs = match specs with
+	| sp :: rest -> begin
+		let hipfuncspec, dspecs = split_specs_n rest in
+		  match sp with
+			| ((a,"static"::b), c) -> (((a, b),c) :: hipfuncspec, dspecs)
+			| ((a,"dynamic"::b), c) -> (hipfuncspec, ((a, b),c) :: dspecs)
+	  end
+	| [] -> ([], [])
+
 let rec split_members mbrs = match mbrs with
 	| mbr :: rest -> begin
 		let fields, invs, meths = split_members rest in
@@ -3511,7 +3520,7 @@ opt_spec_list_file: [[t = LIST0 spec_list_file -> t]];
 
 spec_list_file: [[`IDENTIFIER id; t = opt_spec_list -> (id, t)]];
 
-opt_spec_list: [[t = LIST0 spec_list_grp -> label_struc_groups_auto t]];
+opt_spec_list: [[t = LIST0 spec_list_grp -> List.map label_struc_groups_auto (split_specs_n t)]];
 
 spec_list_only : [[t= LIST1 spec_list_grp -> label_struc_list t ]];
 
@@ -3669,7 +3678,7 @@ proc_header:
   | `VOID; `IDENTIFIER id; `OPAREN; fpl=opt_formal_parameter_list; `CPAREN; ot=opt_throws; osl=opt_spec_list ->
     (*let static_specs, dynamic_specs = split_specs $6 in*)
     let cur_file = proc_files # top in
-    mkProc cur_file id [] "" None false ot fpl void_type None osl (F.mkEFalseF ()) (get_pos_camlp4 _loc 1) None]];
+    mkProc cur_file id [] "" None false ot fpl void_type None (List.nth osl 0) (List.nth osl 1) (get_pos_camlp4 _loc 1) None]];
 
 constructor_decl:
   [[ h=constructor_header; b=proc_body -> {h with proc_body = Some b}
@@ -4583,4 +4592,3 @@ let create_tnt_prim_proc_list ids : Iast.proc_decl list =
   List.concat (List.map (fun id ->
     match (create_tnt_prim_proc id) with
     | None -> [] | Some pd -> [pd]) ids)
-
