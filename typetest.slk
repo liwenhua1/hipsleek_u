@@ -1,0 +1,33 @@
+// ============================================================
+// Sleek Type Union and Standalone Type Annotation Tests
+// ============================================================
+
+// Test 1: Simple type annotation alone (no equation)
+checkentail x:int |- true.
+
+// Test 2: Type annotation with union type (no equation)
+checkentail x:int\/str |- true.
+
+// Test 3: Chained union types (left-associative)
+checkentail x:int\/str\/float |- true.
+
+// Test 4: Pointer type annotation alone
+checkentail z:int* |- true.
+
+// Test 5: Type annotation with equation (backwards compatibility)
+checkentail x:int = x |- x = x.
+
+// Test 6: Union type with equation (backwards compatibility)
+checkentail x:int\/str = x |- x:int\/str = x.
+
+// Test 7: Boolean type annotation alone
+checkentail b:bool |- true.
+
+// Test 8: Multiple constrained expressions (with AND)
+checkentail x:int = 5 & y:int = 10 |- true.
+
+// Test 9: Float type alone
+checkentail f:float |- true.
+
+// Test 10: Complex union type chain (4 types)
+checkentail v:int\/str\/float\/bool |- true.

@@ -88,7 +88,7 @@ type sleek_token =
   | INFER_IMM_PRE | INFER_IMM_POST
   | UTPRE | UTPOST
   | UIPRE | UIPOST
-  | UNFOLD | UNION
+  | UNFOLD | UNION | TYPEUNION
   | VOID 
   | WHILE | FLOW of string
   (*operators*)  
@@ -199,7 +199,7 @@ module Token = struct
     (* | PRINT_VIEW_LONG -> "print_view_long"  *)
     |CMP -> "sleek compare" | PASS_REF ->"@R" | PASS_REF2 ->"ref"|REL->"relation" |REQUIRES ->"requires" | RES s->"res "^s 
     | RETURN->"return" | SELFT s ->"self "^s | SPLIT ->"split"| SUBSET ->"subset" | STATIC ->"static" | LEXVAR ->"LexVar"
-    | THEN->"then" | THIS s->"this "^s | TO ->"to" | TRUE ->"true" | UNFOLD->"unfold" | UNION->"union"
+    | THEN->"then" | THIS s->"this "^s | TO ->"to" | TRUE ->"true" | UNFOLD->"unfold" | UNION->"union" | TYPEUNION -> "\\/"
     | VOID->"void" | WHILE ->"while" | FLOW s->"flow "^s
     (*operators*)
     | NI ->"@NI" | RO ->"@RO" | ATATSQ -> "@@[" | CARET -> "^"

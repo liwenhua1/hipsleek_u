@@ -2057,6 +2057,7 @@ pure_constr:
        | Pure_f f -> f
        | Pure_c (P.Var (v,_)) ->  P.BForm ((P.mkBVar v (get_pos_camlp4 _loc 1), None), None)
        | Pure_c (P.Ann_Exp (P.Var (v,_), Bool, _)) ->  P.BForm ((P.mkBVar v (get_pos_camlp4 _loc 1), None), None)
+       | Pure_c (P.Ann_Exp (P.Var (v,_), ty, _)) ->  P.BForm ((P.mkBVar v (get_pos_camlp4 _loc 1), None), None)
        | _ -> report_error (get_pos_camlp4 _loc 1) "expected pure_constr, found cexp"
   ]];
 
@@ -2932,10 +2933,14 @@ opt_name: [[t= OPT name-> un_option t ""]];
 
 name:[[ `STRING(_,id)  -> id]];
 
-typ:
+non_union_type:
   [[ peek_array_type; t=array_type     -> (* An Hoa *) (* let () = print_endline "Parsed array type" in *) t
    | peek_pointer_type; t = pointer_type     -> (*let () = print_endline "Parsed pointer type" in *) t
    | t=non_array_type -> (* An Hoa *) (* let () = print_endline "Parsed a non-array type" in *) t]];
+
+typ:
+  [[ t=non_union_type; `TYPEUNION; t2=SELF -> Union (t,t2)
+   | t=non_union_type -> t]];
 
 non_array_type:
   [[ `VOID               -> void_type
