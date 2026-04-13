@@ -173,3 +173,37 @@ checkentail x:int & y:int & z:bool & x > y |- x > y.
 
 // Test 45: Complex expression with nested types (corrected)
 checkentail x:int & y:int & z:int & z = x + y |- true.
+
+// ============================================================
+// Intersection Type Tests
+// ============================================================
+
+// Test 46: Basic intersection type (two types)
+checkentail x:int/\str |- true.
+
+// Test 47: Intersection type with three types (left-associative)
+checkentail x:int/\str/\bool |- true.
+
+// Test 48: Parenthesized intersection type
+checkentail x:(int/\str) |- true.
+
+// Test 49: Intersection type alone (simple)
+checkentail a:float/\int |- true.
+
+// Test 50: Intersection type with union (union binds tighter)
+checkentail x:(int\/str)/\bool |- true.
+
+// Test 51: Complex combined union and intersection  
+checkentail x:int/\str/\float |- true.
+
+// Test 52: Intersection type with pointer (int* and str*)
+checkentail p:int* /\ str* |- true.
+
+// Test 53: Intersection type with int annotations only
+checkentail x:int/\int |- true.
+
+// Test 54: Multiple intersection types with constraints
+checkentail x:int/\str & y:bool/\float |- true.
+
+// Test 55: Intersection type consistency (true on itself)
+checkentail x:int/\str |- x:int/\str.

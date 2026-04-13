@@ -201,6 +201,7 @@ type typ =
   | List of typ
   | BagT of typ
   | Union of typ * typ
+  | Intersection of typ * typ
   (* | Prim of prim_type *)
   | Named of ident (* named type, could be enumerated or object *)
   (* Named "R" *)
@@ -626,6 +627,7 @@ let rec string_of_typ (x:typ) : string = match x with
   | Pointer t        -> "Pointer{"^(string_of_typ t)^"}"
   | FuncT (t1, t2) -> (string_of_typ t1) ^ "->" ^ (string_of_typ t2)
   | Union (t1,t2) -> (string_of_typ t1) ^ "\\/" ^ (string_of_typ t2)
+  | Intersection (t1,t2) -> (string_of_typ t1) ^ "/\\" ^ (string_of_typ t2)
   | UtT b        -> "UtT("^(if b then "pre" else "post")^")"
   | HpT        -> "HpT"
   (* | SLTyp -> "SLTyp" *)
@@ -680,6 +682,8 @@ let rec string_of_typ_alpha = function
   | RelT a      -> "RelT("^(pr_list string_of_typ a)^")"
   | Pointer t        -> "Pointer{"^(string_of_typ t)^"}"
   | FuncT (t1, t2) -> (string_of_typ t1) ^ "_" ^ (string_of_typ t2)
+  | Union (t1,t2) -> (string_of_typ t1) ^ "_U_" ^ (string_of_typ t2)
+  | Intersection (t1,t2) -> (string_of_typ t1) ^ "_I_" ^ (string_of_typ t2)
   | UtT b        -> "UtT("^(if b then "pre" else "post")^")"
   | HpT        -> "HpT"
   (* | SLTyp -> "SLTyp" *)

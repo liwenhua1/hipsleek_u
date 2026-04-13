@@ -495,6 +495,7 @@ rule tokenizer file_name = parse
   | "%=" { OP_MOD_ASSIGN }
   | "*=" { OP_MULT_ASSIGN }
   | "\\/" { TYPEUNION }
+  | "/\\" { TYPEINTERSECT }
   | "-=" { OP_SUB_ASSIGN }
   | '|' { OR }
   | "||" { OROR }

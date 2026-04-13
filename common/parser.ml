@@ -2930,9 +2930,13 @@ non_union_type:
    | peek_pointer_type; t = pointer_type     -> (*let () = print_endline "Parsed pointer type" in *) t
    | t=non_array_type -> (* An Hoa *) (* let () = print_endline "Parsed a non-array type" in *) t]];
 
-typ:
-  [[ t=non_union_type; `TYPEUNION; t2=SELF -> Union (t,t2)
+intersection_type:
+  [[ t=non_union_type; `TYPEINTERSECT; t2=SELF -> Intersection (t,t2)
    | t=non_union_type -> t]];
+
+typ:
+  [[ t=intersection_type; `TYPEUNION; t2=SELF -> Union (t,t2)
+   | t=intersection_type -> t]];
 
 non_array_type:
   [[ `VOID               -> void_type
@@ -2945,6 +2949,7 @@ non_array_type:
    | `ABSTRACT          -> void_type
    | `BAG; `OPAREN; t = non_array_type ; `CPAREN -> BagT t
    | `IDENTIFIER id      -> Named id
+   | `OPAREN; t=typ; `CPAREN -> t
    | `OPAREN; t1=non_array_type; `COMMA; t2=non_array_type; `CPAREN -> Tup2 (t1,t2)
    | t=rel_header_view   -> let tl,_ = List.split t.Iast.rel_typed_vars in RelT tl ]];
 
