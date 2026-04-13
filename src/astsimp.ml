@@ -8617,6 +8617,14 @@ and trans_pure_b_formula_x (b0 : IP.b_formula) (tlist:spec_var_type_list) prog :
                  CP.Frm (sv, pos)
                | IP.BConst (b, pos) -> CP.BConst (b, pos)
                | IP.BVar ((v, p), pos) -> CP.BVar (CP.SpecVar (C.bool_type, v, p), pos)
+               | IP.TypeAnn (e, ty, pos) ->
+                 let ty_trans = trans_type prog ty pos in
+                 begin match e with
+                 | IP.Var ((v, p), _) ->
+                   let sv = CP.SpecVar (ty_trans, v, p) in
+                   CP.BVar (sv, pos)
+                 | _ -> failwith "trans_pure_b_formula: TypeAnn expression must be a variable"
+                 end
                | IP.LexVar (t_ann, ls1, ls2, pos) ->
                  let cle = List.map (fun e -> x_add trans_pure_exp e tlist prog) ls1 in
                  let clt = List.map (fun e -> x_add trans_pure_exp e tlist prog) ls2 in

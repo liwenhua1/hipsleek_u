@@ -827,6 +827,11 @@ and gather_type_info_p_formula prog pf tlist =  match pf with
   | IP.BVar ((bv, bp), pos) ->
     let (n_tlist,n_type) = x_add gather_type_info_var bv tlist (C.bool_type) pos in
     n_tlist
+  | IP.TypeAnn (e, ty, pos) ->
+    begin match e with
+    | IP.Var ((bv, bp), _) -> fst (x_add gather_type_info_var bv tlist (trans_type prog ty pos) pos)
+    | _ -> tlist
+    end
   | IP.SubAnn(a1,a2,pos) ->
     let (n_tl,n_ty) = x_add gather_type_info_exp prog a1 tlist (Cpure.ann_type) in
     let (n_tl,n_ty) = x_add gather_type_info_exp prog a2 n_tl (Cpure.ann_type) in

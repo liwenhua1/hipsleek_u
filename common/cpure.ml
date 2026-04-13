@@ -275,6 +275,7 @@ and p_formula =
   | LexVar of lex_info
   | BConst of (bool * loc)
   | BVar of (spec_var * loc)
+  | TypeAnn of (exp * typ * loc)
   | Lt of (exp * exp * loc)
   | Lte of (exp * exp * loc)
   | Gt of (exp * exp * loc)

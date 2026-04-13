@@ -1045,6 +1045,7 @@ let rec pr_b_formula (e:P.b_formula) =
   | P.BConst (b,l) -> fmt_bool b
   | P.XPure v ->  fmt_string (string_of_xpure_view v)
   | P.BVar (x, l) -> fmt_string (string_of_spec_var x)
+  | P.TypeAnn (e, ty, _) -> pr_formula_exp e; fmt_string ":"; fmt_string (string_of_typ ty)
   | P.Lt (e1, e2, l) -> f_b e1; fmt_string op_lt ; f_b e2
   | P.Lte (e1, e2, l) -> f_b e1; fmt_string op_lte ; f_b e2
   | P.Gt (e1, e2, l) -> f_b e1; fmt_string op_gt ; f_b e2

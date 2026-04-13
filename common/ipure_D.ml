@@ -63,6 +63,7 @@ and p_formula =
   | XPure of xpure_view
   | BConst of (bool * loc)
   | BVar of ((ident * primed) * loc)
+  | TypeAnn of (exp * typ * loc)
   (* Ann Subtyping v1 <: v2 *)
   | SubAnn of (exp * exp * loc) 
   | Lt of (exp * exp * loc)

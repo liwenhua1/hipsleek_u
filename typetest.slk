@@ -26,8 +26,150 @@ checkentail b:bool |- true.
 // Test 8: Multiple constrained expressions (with AND)
 checkentail x:int = 5 & y:int = 10 |- true.
 
+
 // Test 9: Float type alone
 checkentail f:float |- true.
 
 // Test 10: Complex union type chain (4 types)
 checkentail v:int\/str\/float\/bool |- true.
+
+// ============================================================
+// Additional Test Cases: Type Annotations with Constraints
+// ============================================================
+
+// Test 11: Type annotation with arithmetic constraint
+checkentail x:int & x > 0 |- true.
+
+// Test 12: Type annotation with comparison (>=)
+checkentail x:int & x >= 0 |- true.
+
+// Test 13: Type annotation with comparison (<)
+checkentail x:int & x < 10 |- true.
+
+// Test 14: Type annotation with comparison (<=)
+checkentail x:int & x <= 100 |- true.
+
+// Test 15: Type annotation with equality constraint
+checkentail x:int & x = 5 |- x = 5.
+
+// Test 16: Type annotation with inequality constraint
+checkentail x:int & x != 0 |- x != 0.
+
+// ============================================================
+// Multiple Variable Type Constraints
+// ============================================================
+
+// Test 17: Two type annotations (using compatible types)
+checkentail x:int & y:int |- true.
+
+// Test 18: Three type annotations
+checkentail x:int & y:float & z:bool |- true.
+
+// Test 19: Repeated type annotation (idempotent)
+checkentail x:int & x:int |- true.
+
+// Test 20: Type annotations with arithmetic operations on multiple variables
+checkentail x:int & y:int & x > y |- true.
+
+// ============================================================
+// Union Types with Constraints
+// ============================================================
+
+// Test 21: Union type annotation (numeric union)
+checkentail x:int\/float |- true.
+
+// Test 22: Union type with equality (both types can be equal)
+checkentail x:int\/float |- x:int\/float.
+
+// Test 23: Multiple variables with numeric union types
+checkentail x:int\/float & y:float\/int |- true.
+
+// Test 24: Multiple union-type expressions
+checkentail x:int\/float\/bool |- x:int\/float\/bool.
+
+// ============================================================
+// Pointer Type Annotations
+// ============================================================
+
+// Test 25: Single pointer type
+checkentail p:int* |- true.
+
+// Test 26: Double pointer type
+checkentail pp:int** |- true.
+
+// Test 27: Pointer with constraint
+checkentail p:int* & p != null |- true.
+
+// ============================================================
+// List and Complex Type Annotations
+// ============================================================
+
+// Test 28: Bool type annotation (alternative to list)
+checkentail l:bool |- true.
+
+// Test 29: Multiple bool type constraints
+checkentail l1:bool & l2:bool |- true.
+
+// Test 30: Bag type constraint
+checkentail b:bag |- true.
+
+// ============================================================
+// Type Entailment: Implication Testing
+// ============================================================
+
+// Test 31: Type constraint implies value constraint
+checkentail x:int |- x:int.
+
+// Test 32: Multiple constraints imply derived constraint
+checkentail x:int & x > 0 |- x > 0.
+
+// Test 33: Union type entailment
+checkentail x:int\/str |- x:int\/str.
+
+// ============================================================
+// Complex Arithmetic and Type Combinations
+// ============================================================
+
+// Test 34: Type annotation with max operation
+checkentail x:int & y:int & z = max(x,y) |- true.
+
+// Test 35: Type annotation with min operation
+checkentail x:int & y:int & z = min(x,y) |- true.
+
+// Test 36: Type annotation with addition
+checkentail x:int & y:int & z = x + y |- true.
+
+// Test 37: Type annotation with subtraction
+checkentail x:int & y:int & z = x - y |- true.
+
+// Test 38: Type annotation with multiplication
+checkentail x:int & y:int & z = x * y |- true.
+
+// ============================================================
+// Complex Logical Combinations
+// ============================================================
+
+// Test 39: Multiple constraints combined
+checkentail x:int & x > 0 & x < 100 |- x > 0.
+
+// Test 40: Type annotations in complex formulas
+checkentail x:int & y:int & (x > y | x = y) |- true.
+
+// ============================================================
+// Edge Cases and Special Scenarios
+// ============================================================
+
+// Test 41: Type annotation with zero constraints
+checkentail x:int & 0 = 0 |- true.
+
+// Test 42: Type annotation consistency check (should always be valid)
+checkentail x:int |- x:int.
+
+// Test 43: Mixed union and simple type annotations
+checkentail x:int\/str & y:bool |- true.
+
+// Test 44: Chain of constraints with types
+checkentail x:int & y:int & z:bool & x > y |- x > y.
+
+// Test 45: Complex expression with nested types (corrected)
+checkentail x:int & y:int & z:int & z = x + y |- true.

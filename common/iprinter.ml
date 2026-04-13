@@ -288,6 +288,7 @@ and string_of_p_formula pf =
   | P.BVar (x, l)               -> string_of_id x
   | P.SubAnn (e1,e2, l)        -> 
     (string_of_formula_exp e1)^"<:"^(string_of_formula_exp e2)
+  | P.TypeAnn (e, ty, _)        -> (string_of_formula_exp e) ^ ":" ^ (string_of_typ ty)
   | P.LexVar (t_ann, ls1, ls2, l) ->
     let ann = string_of_term_ann t_ann in
     (match t_ann with

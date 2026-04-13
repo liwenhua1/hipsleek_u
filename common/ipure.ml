@@ -1574,7 +1574,7 @@ and float_out_pure_min_max (p : formula) : formula =
   let rec float_out_b_formula_min_max (b: b_formula) lbl: formula =
     let (pf,il) = b in
     match pf with
-    | BConst _ | Frm _ | BVar _ |XPure _
+    | BConst _ | Frm _ | BVar _ | TypeAnn _ | XPure _
     | LexVar _ | ImmRel _ -> BForm (b,lbl)
     | Lt (e1, e2, l) ->
       let ne1, np1 = float_out_exp_min_max e1 in
