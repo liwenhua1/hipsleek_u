@@ -401,7 +401,7 @@ let parse_file (parse) (source_file : string) =
 let main () =
   let () = record_backtrace_quite () in
   let iprog = { I.prog_include_decls =[];
-                I.prog_data_decls = [iobj_def;ithrd_def];
+                I.prog_data_decls = [iobj_def;ithrd_def;Sleekengine.int_type_def;Sleekengine.str_type_def;Sleekengine.bool_type_def;Sleekengine.float_type_def];
                 I.prog_global_var_decls = [];
                 I.prog_logical_var_decls = [];
                 I.prog_enum_decls = [];

@@ -1254,7 +1254,14 @@ and try_unify_data_type_args prog c v deref ies tlist pos =
 and try_unify_data_type_args_x prog c v deref ies tlist pos =
   (* An Hoa : problem detected - have to expand the inline fields as well, fix in look_up_all_fields. *)
   let pr_args = pr_list Iprinter.string_of_formula_exp in
-  if (deref = 0) then (
+  (* Check if c is a built-in type expression *)
+  let is_builtin_type = List.mem c ["int"; "str"; "float"; "bool"; "NUM"; "INFInt"] in
+  if is_builtin_type && deref = 0 then (
+    (* For type expressions like p::int, just register the variable *)
+    let (n_tl,_) = x_add gather_type_info_var v tlist (Named c) pos in
+    n_tl
+  )
+  else if (deref = 0) then (
     try (
       let ddef = x_add I.look_up_data_def_raw prog.I.prog_data_decls c in
       let (n_tl,_) = x_add gather_type_info_var v tlist ((Named c)) pos in
@@ -1652,6 +1659,19 @@ and gather_type_info_heap_x prog (h0 : IF.h_formula) tlist =
       else n_tl
     else (* End dealing with generic ptr, continue what the original system did *)
       let n_tl =
+        (* Check if v_name is a built-in type expression like "int", "str", "float", "bool" *)
+        let is_builtin_type = List.mem v_name ["int"; "str"; "float"; "bool"; "NUM"; "INFInt"] in
+        if is_builtin_type then
+          (* For built-in type expressions like p::int, register variable and process permissions *)
+          (try
+             let (n_tl,_) = x_add gather_type_info_var v tlist (Named v_name) pos in
+             let n_tl = x_add gather_type_info_perm perm n_tl in
+             let n_tl = x_add gather_type_info_ann ann n_tl in
+             let n_tl = x_add gather_type_info_param_ann ann_param n_tl in
+             let n_tl = x_add gather_type_info_ho_args hoa n_tl in
+             n_tl
+           with _ -> tlist) (* Silently skip on any error for type expressions *)
+        else
         (try
            let vdef = I.look_up_view_def_raw x_loc prog.I.prog_view_decls v_name in
            (* let () = if vdef.I.view_is_prim then Debug.ninfo_pprint ("type_gather: prim_pred "^v_name) no_pos in *)

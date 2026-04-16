@@ -154,6 +154,43 @@ let ithrd_def =  {I.data_name = Globals.thrd_name ;
                   I.data_is_template = false;
                   I.data_methods = [] }
 
+(* Synthetic data definitions for built-in types to support p::int syntax *)
+let int_type_def =  {I.data_name = "int";
+                     I.data_fields = [];
+                     I.data_pos = no_pos;
+                     I.data_parent_name = "";
+                     I.data_invs = [];
+                     I.data_pure_inv = None;
+                     I.data_is_template = false;
+                     I.data_methods = [] }
+
+let str_type_def =  {I.data_name = "str";
+                     I.data_fields = [];
+                     I.data_pos = no_pos;
+                     I.data_parent_name = "";
+                     I.data_invs = [];
+                     I.data_pure_inv = None;
+                     I.data_is_template = false;
+                     I.data_methods = [] }
+
+let bool_type_def =  {I.data_name = "bool";
+                      I.data_fields = [];
+                      I.data_pos = no_pos;
+                      I.data_parent_name = "";
+                      I.data_invs = [];
+                      I.data_pure_inv = None;
+                      I.data_is_template = false;
+                      I.data_methods = [] }
+
+let float_type_def =  {I.data_name = "float";
+                       I.data_fields = [];
+                       I.data_pos = no_pos;
+                       I.data_parent_name = "";
+                       I.data_invs = [];
+                       I.data_pure_inv = None;
+                       I.data_is_template = false;
+                       I.data_methods = [] }
+
 let iprog = { I.prog_include_decls =[];
               I.prog_data_decls = [iobj_def;ithrd_def;iexc_def];
               I.prog_global_var_decls = [];

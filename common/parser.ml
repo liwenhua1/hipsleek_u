@@ -1823,6 +1823,11 @@ heap_id:
    | `FLOAT; `CARET -> ("float", 0, 1, _loc)
    | `BOOL; `CARET -> ("bool", 0, 1, _loc)
    | `IDENTIFIER id; `CARET -> (id, 0, 1, _loc)
+   (* Support type expressions: int, str, bool, float, etc. *)
+   | `INT -> ("int", 0, 0, _loc)
+   | `FLOAT -> ("float", 0, 0, _loc)
+   | `BOOL -> ("bool", 0, 0, _loc)
+   | `VOID -> ("void", 0, 0, _loc)
    | hid = heap_id; `STAR ->
        let (h, s, c, l) = hid in
        if (c > 0) then
@@ -1863,11 +1868,13 @@ thread_args:
 non_thread_args1:
   [[
     `LT; hl= opt_general_h_args; `GT -> hl
+   | -> ([], []) (* Allow no arguments for type expressions *)
   ]];
 
 non_thread_args2:
   [[
     `LT; hl= opt_data_h_args; `GT -> hl
+   | -> ([], []) (* Allow no arguments for type expressions *)
   ]];
 
 (*LDK: add frac for fractional permission*)

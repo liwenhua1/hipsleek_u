@@ -205,5 +205,20 @@ checkentail x:int/\int |- true.
 // Test 54: Multiple intersection types with constraints
 checkentail x:int/\str & y:bool/\float |- true.
 
-// Test 55: Intersection type consistency (true on itself)
+// Test 55: Pointer type as heap points-to type
+checkentail p::int |- true.
+
+// Test 56: Multiple pointer type heap formulas
+checkentail p::int * q::str |- true.
+
+// Test 57: Pointer type with a boolean heap formula
+checkentail r::bool |- true.
+
+// Test 58: Pointer type with float heap formula
+checkentail s::float |- true.
+
+// Test 59: Mixed pointer types and pure constraints
+checkentail p::int * q::str & p != null |- p != null.
+
+// Test 60: Intersection type consistency (true on itself)
 checkentail x:int/\str |- x:int/\str.
