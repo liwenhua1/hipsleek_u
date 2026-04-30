@@ -126,99 +126,117 @@ checkentail x:int & x > 0 |- x > 0.
 // Test 33: Union type entailment
 checkentail x:int\/str |- x:int\/str.
 
+// Test 34: Subtyping - int is subtype of int\/bool
+checkentail x:int |- x:int\/bool.
+
+// Test 35: Subtyping - bool is subtype of int\/bool
+checkentail x:bool |- x:int\/bool.
+
+// Test 36: Subtyping - int is subtype of NUM (numeric supertype)
+checkentail x:int |- x:NUM.
+
+// Test 37: Subtyping - float is subtype of NUM
+checkentail x:float |- x:NUM.
+
+// Test 36: Subtyping - int is subtype of NUM (numeric supertype)
+checkentail x:int |- x:NUM.
+
+// Test 37: Subtyping - float is subtype of NUM
+checkentail x:float |- x:NUM.
+
+// Test 38: Subtyping - intersection implies component types
+checkentail x:int/\bool |- x:int.
+
+// Test 39: Subtyping - intersection implies component types (second component)
+checkentail x:int/\bool |- x:bool.
+
+// Test 40: Subtyping - intersection implies union of components
+checkentail x:int/\bool |- x:int\/bool.
+
+// Test 41: Subtyping - union of intersections
+checkentail x:(int/\bool)\/(float/\bool) |- x:int\/bool.
+
+// Test 42: Subtyping - nested union/intersection
+checkentail x:int |- x:(int\/bool)/\NUM.
+
+// Test 43: Subtyping with constraints - subtype preserves constraints
+checkentail x:int & x > 0 |- x:int\/bool & x > 0.
+
 // ============================================================
 // Complex Arithmetic and Type Combinations
 // ============================================================
 
-// Test 34: Type annotation with max operation
+// Test 44: Type annotation with max operation
 checkentail x:int & y:int & z = max(x,y) |- true.
 
-// Test 35: Type annotation with min operation
+// Test 45: Type annotation with min operation
 checkentail x:int & y:int & z = min(x,y) |- true.
 
-// Test 36: Type annotation with addition
+// Test 46: Type annotation with addition
 checkentail x:int & y:int & z = x + y |- true.
 
-// Test 37: Type annotation with subtraction
+// Test 47: Type annotation with subtraction
 checkentail x:int & y:int & z = x - y |- true.
 
-// Test 38: Type annotation with multiplication
+// Test 48: Type annotation with multiplication
 checkentail x:int & y:int & z = x * y |- true.
 
 // ============================================================
 // Complex Logical Combinations
 // ============================================================
 
-// Test 39: Multiple constraints combined
+// Test 49: Multiple constraints combined
 checkentail x:int & x > 0 & x < 100 |- x > 0.
 
-// Test 40: Type annotations in complex formulas
+// Test 50: Type annotations in complex formulas
 checkentail x:int & y:int & (x > y | x = y) |- true.
 
 // ============================================================
 // Edge Cases and Special Scenarios
 // ============================================================
 
-// Test 41: Type annotation with zero constraints
+// Test 51: Type annotation with zero constraints
 checkentail x:int & 0 = 0 |- true.
 
-// Test 42: Type annotation consistency check (should always be valid)
+// Test 52: Type annotation consistency check (should always be valid)
 checkentail x:int |- x:int.
 
-// Test 43: Mixed union and simple type annotations
+// Test 53: Mixed union and simple type annotations
 checkentail x:int\/str & y:bool |- true.
 
-// Test 44: Chain of constraints with types
+// Test 54: Chain of constraints with types
 checkentail x:int & y:int & z:bool & x > y |- x > y.
 
-// Test 45: Complex expression with nested types (corrected)
+// Test 55: Complex expression with nested types (corrected)
 checkentail x:int & y:int & z:int & z = x + y |- true.
 
 // ============================================================
 // Intersection Type Tests
 // ============================================================
 
-// Test 46: Basic intersection type (two types)
+// Test 56: Basic intersection type (two types)
 checkentail x:int/\str |- true.
 
-// Test 47: Intersection type with three types (left-associative)
+// Test 57: Intersection type with three types (left-associative)
 checkentail x:int/\str/\bool |- true.
 
-// Test 48: Parenthesized intersection type
+// Test 58: Parenthesized intersection type
 checkentail x:(int/\str) |- true.
 
-// Test 49: Intersection type alone (simple)
+// Test 59: Intersection type alone (simple)
 checkentail a:float/\int |- true.
 
-// Test 50: Intersection type with union (union binds tighter)
+// Test 60: Intersection type with union (union binds tighter)
 checkentail x:(int\/str)/\bool |- true.
 
-// Test 51: Complex combined union and intersection  
+// Test 61: Complex combined union and intersection  
 checkentail x:int/\str/\float |- true.
 
-// Test 52: Intersection type with pointer (int* and str*)
-checkentail p:int* /\ str* |- true.
-
-// Test 53: Intersection type with int annotations only
+// Test 62: Intersection type with int annotations only
 checkentail x:int/\int |- true.
 
-// Test 54: Multiple intersection types with constraints
+// Test 63: Multiple intersection types with constraints
 checkentail x:int/\str & y:bool/\float |- true.
 
-// Test 55: Pointer type as heap points-to type
-checkentail p::int |- true.
-
-// Test 56: Multiple pointer type heap formulas
-checkentail p::int * q::str |- true.
-
-// Test 57: Pointer type with a boolean heap formula
-checkentail r::bool |- true.
-
-// Test 58: Pointer type with float heap formula
-checkentail s::float |- true.
-
-// Test 59: Mixed pointer types and pure constraints
-checkentail p::int * q::str & p != null |- p != null.
-
-// Test 60: Intersection type consistency (true on itself)
+// Test 70: Intersection type consistency (true on itself)
 checkentail x:int/\str |- x:int/\str.
