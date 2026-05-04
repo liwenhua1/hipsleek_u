@@ -67,10 +67,10 @@ let classes_related (prog : I.prog_decl) (c1 : I.data_decl) (c2 : I.data_decl) :
 (* receives two types and verifies if they are identic *)
 let rec match_type (t1 : typ) (t2 : typ) : bool = 
   match t1 with
-  | Named (i1) -> 
-    begin 
+  | Named (i1, _) ->
+    begin
       match t2 with
-      | Named (i2) -> (i1 = i2)
+      | Named (i2, _) -> (i1 = i2)
       | _ -> false
     end	      	
   | Array (t3, o3) -> 

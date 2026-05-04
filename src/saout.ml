@@ -50,11 +50,11 @@ let transform_hp_rels_to_iviews iprog cprog (hp_rels:( CF.hp_rel_def) list):((id
           in
           (*mkExist*)
           let data_name,r  = match CP.type_of_spec_var r with
-            | Named id -> if String.compare id "" = 0  then
+            | Named (id, _) -> if String.compare id "" = 0  then
                 let n_id = C.get_root_typ_hprel cprog.C.prog_hp_decls (CP.name_of_spec_var v) in
                 let () = Debug.ninfo_hprint (add_str "n_id: " pr_id) n_id  no_pos in
                 let () = report_warning no_pos "sao: why is self's type null?" in
-                (n_id, (CP.SpecVar (Named n_id, CP.name_of_spec_var r, CP.primed_of_spec_var r)))
+                (n_id, (CP.SpecVar (Named (n_id, []), CP.name_of_spec_var r, CP.primed_of_spec_var r)))
               else
                 id,r
             | _ -> report_error no_pos "should be a data name"

@@ -206,7 +206,7 @@ let trans_view_one_derv_x (prog : Iast.prog_decl) rev_formula_fnc trans_view_fnc
   let fs = List.map Cformula.elim_exists (List.map Cfutil.fresh_exists fs1) in
   let pos = view_derv.Iast.view_pos in
   let () =  Debug.ninfo_hprint (add_str "   orig_view.C.view_data_name: " (pr_id )) orig_view.C.view_data_name pos in
-  let self_sv = (CP.SpecVar (Named (orig_view.C.view_data_name),self, Unprimed)) in
+  let self_sv = (CP.SpecVar (Named (orig_view.C.view_data_name, []),self, Unprimed)) in
   let pure_extn_svl = [self_sv] in
   let (base_brs,ind_brs) = x_add CF.extract_abs_formula_branch fs orig_view.C.view_name view_derv.Iast.view_name n_args ls_dname_pos  pure_extn_svl false true in
   (*extend base cases*)
@@ -427,7 +427,7 @@ let trans_view_one_spec_x (prog : Iast.prog_decl) (cviews (*orig _extn*) : C.vie
   let orig_fs,labels = List.split orig_view.C.view_un_struc_formula in
   let ss = List.combine orig_view.C.view_vars spec_view.C.view_vars in
   let spec_fs = List.map (x_add CF.subst ss) orig_fs in
-  let pure_extn_svl = [ (CP.SpecVar (Named (view_derv.Iast.view_data_name),self, Unprimed))] in
+  let pure_extn_svl = [ (CP.SpecVar (Named (view_derv.Iast.view_data_name, []),self, Unprimed))] in
   let (orig_b_brs,orig_ind_brs) = x_add CF.extract_abs_formula_branch spec_fs orig_view.C.view_name view_derv.Iast.view_name spec_view.C.view_vars ls_dname_pos pure_extn_svl true true in
   (* let orig_inv_p = (MCP.pure_of_mix spec_view.C.view_user_inv) in *)
   (* let (orig_brs, orig_val_extns) = CF.classify_formula_branch orig_fs orig_inv_p orig_view.C.view_name *)
@@ -925,7 +925,7 @@ let extend_size pname (* name of extn *) ?(vn_of_pname=None) scc_vdecls (* selec
   let extend_size_vdecl vns (*mutual call*) vd =
     (* let nnn = CP.mk_typed_spec_var NUM nnn in (\* an integer *\) *)
     (* let new_name = vd.C.view_name^"_"^pname in *)
-    let typ = Named (vd.C.view_data_name) in
+    let typ = Named (vd.C.view_data_name, []) in
     let vars = vd.C.view_vars in
     let () = p_tab # reset_view typ in
     let () = p_tab # set_inv in
@@ -1070,7 +1070,7 @@ let leverage_self_info_x xform formulas anns data_name=
   let ls_self_not_null = List.map detect_anns_f fs in
   let self_not_null = List.for_all (fun b -> b) ls_self_not_null in
   let self_info =
-    let self_sv = CP.SpecVar (Named data_name,self,Unprimed) in
+    let self_sv = CP.SpecVar (Named (data_name, []),self,Unprimed) in
     if self_not_null then
       CP.mkNeqNull self_sv no_pos
     else CP.mkNull self_sv no_pos
@@ -1092,7 +1092,7 @@ let expose_pure_extn_one_view iprog cprog rev_formula_fnc trans_view_fnc lower_m
     let d_dclr = Iast.look_up_data_def 67 no_pos iprog.Iast.prog_data_decls d_name in
     let extn_fields = List.fold_left (fun acc ((t,_),_,_,props) -> begin
         match t with
-          | Named id -> if string_eq id d_name then acc@props else acc
+          | Named (id, _) -> if string_eq id d_name then acc@props else acc
           | _ -> acc
         end
     ) [] d_dclr.Iast.data_fields in

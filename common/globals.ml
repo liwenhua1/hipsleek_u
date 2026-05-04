@@ -190,6 +190,7 @@ type typ =
   | FORM (* Type for formula *)
   | UNK
   | TVar of int
+  | TypeVar of ident (* named type variable, e.g. T in data List<T> *)
   | AnnT
   | Bool
   | Float
@@ -203,8 +204,8 @@ type typ =
   | Union of typ * typ
   | Intersection of typ * typ
   (* | Prim of prim_type *)
-  | Named of ident (* named type, could be enumerated or object *)
-  (* Named "R" *)
+  | Named of ident * typ list (* named type, could be enumerated or object, with type parameters *)
+  (* Named "R" [] *)
   | Array of (typ * int) (* base type and dimension *)
   | RelT of (typ list) (* relation type *)
   | HpT (* heap predicate relation type *)
@@ -262,18 +263,18 @@ let is_undef_typ t =
 
 let is_ptr_arith t =
   match t with
-  | Named id -> true (* String.compare id "" != 0 *)
+  | Named (id, _) -> true (* String.compare id "" != 0 *)
   | Array _ -> true
   | _ -> false
 
 let is_node_typ t =
   match t with
-  | Named id -> true (* String.compare id "" != 0 *)
+  | Named (id, _) -> true (* String.compare id "" != 0 *)
   | _ -> false
 
 let is_possible_node_typ t =
   match t with
-  | Named id -> true (* String.compare id "" != 0 *)
+  | Named (id, _) -> true (* String.compare id "" != 0 *)
   | TVar _ -> true
    (* Unknown can also be a node *)
   | UNK -> true
@@ -308,7 +309,11 @@ let rec cmp_typ t1 t2=
   | TVar i1, TVar i2 -> i1=i2
   | BagT t11, BagT t22
   | List t11, List t22 -> cmp_typ t11 t22
-  | Named s1, Named s2 -> String.compare s1 s2 = 0
+  | Named (s1, tl1), Named (s2, tl2) -> String.compare s1 s2 = 0 && (
+      try
+        List.for_all (fun (t11,t22) -> cmp_typ t11 t22) (List.combine tl1 tl2)
+      with _ -> false
+    )
   | Array (t11, i1), Array (t22, i2) -> i1=i2 && cmp_typ t11 t22
   | RelT lst1, RelT lst2 ->(
       try
@@ -355,10 +360,10 @@ let convert_typ (t:typ) : typ =
   match t with
   | Pointer t1 ->
     (match t1 with
-     | Int -> Named "int_ptr"
+     | Int -> Named ("int_ptr", [])
      | Pointer t2 ->
        (match t2 with
-        | Int -> Named "int_ptr_ptr"
+        | Int -> Named ("int_ptr_ptr", [])
         | _ -> t2 (*TO CHECK: need to generalize for float, bool, ...*)
        )
      | _ -> t1 (*TO CHECK: need to generalize for float, bool, ...*)
@@ -367,16 +372,16 @@ let convert_typ (t:typ) : typ =
 
 let revert_typ (t:typ) : typ =
   (match t with
-   | Named t1 ->
+   | Named (t1, []) ->
      (match t1 with
       | "int_ptr" -> Int
-      | "int_ptr_ptr" -> Named "int_ptr"
-      | _ -> Named "Not_Support")
-   | _ -> Named "Not_Support")
+      | "int_ptr_ptr" -> Named ("int_ptr", [])
+      | _ -> Named ("Not_Support", []))
+   | _ -> Named ("Not_Support", []))
 
 let name_of_typ (t:typ) : string =
   (match t with
-   | Named t1 ->
+   | Named (t1, _) ->
      t1
    | _ ->
      "Not_Support")
@@ -386,14 +391,14 @@ let is_pointer t=
   | Named _ -> true
   | _ -> false
 
-let barrierT = Named "barrier"
+let barrierT = Named ("barrier", [])
 
 let convert_prim_to_obj (t:typ) : typ =
   (match t with
-   | Int -> Named "int_ptr"
-   | Named t1 ->
+   | Int -> Named ("int_ptr", [])
+   | Named (t1, []) ->
      (match t1 with
-      | "int_ptr" -> Named "int_ptr_ptr"
+      | "int_ptr" -> Named ("int_ptr_ptr", [])
       | _-> t (*TO CHECK: need to generalize for float, bool, ...*)
      )
    | _ -> t (*TO CHECK: need to generalize for float, bool, ...*)
@@ -620,6 +625,7 @@ let rec string_of_typ (x:typ) : string = match x with
   | Tup2 (t1,t2)  -> "tup2("^(string_of_typ t1) ^ "," ^(string_of_typ t2) ^")"
   | BagT t        -> "bag("^(string_of_typ t)^")"
   | TVar t        -> "TVar["^(string_of_int t)^"]"
+  | TypeVar id    -> "TypeVar["^id^"]"
   | List t        -> "list("^(string_of_typ t)^")"
   | Tree_sh		  -> "Tsh"
   | Bptyp		  -> "Bptyp"
@@ -631,7 +637,8 @@ let rec string_of_typ (x:typ) : string = match x with
   | UtT b        -> "UtT("^(if b then "pre" else "post")^")"
   | HpT        -> "HpT"
   (* | SLTyp -> "SLTyp" *)
-  | Named ot -> if ((String.compare ot "") ==0) then "null_type" else ot
+  | Named (ot, []) -> if ((String.compare ot "") ==0) then "null_type" else ot
+  | Named (ot, tl) -> if ((String.compare ot "") ==0) then "null_type" else ot ^ "[" ^ (pr_list string_of_typ tl) ^ "]"
   | Array (et, r) -> (* An Hoa *)
     let rec repeat k = if (k <= 0) then "" else "[]" ^ (repeat (k-1)) in
     (string_of_typ et) ^ (repeat r)
@@ -678,6 +685,7 @@ let rec string_of_typ_alpha = function
   | Tup2 (t1,t2)  -> "tup2_"^(string_of_typ t1)^"_"^(string_of_typ t2)
   | BagT t        -> "bag_"^(string_of_typ t)
   | TVar t        -> "TVar_"^(string_of_int t)
+  | TypeVar id    -> "TypeVar_"^id
   | List t        -> "list_"^(string_of_typ t)
   | RelT a      -> "RelT("^(pr_list string_of_typ a)^")"
   | Pointer t        -> "Pointer{"^(string_of_typ t)^"}"
@@ -687,7 +695,8 @@ let rec string_of_typ_alpha = function
   | UtT b        -> "UtT("^(if b then "pre" else "post")^")"
   | HpT        -> "HpT"
   (* | SLTyp -> "SLTyp" *)
-  | Named ot -> if ((String.compare ot "") ==0) then "null_type" else ot
+  | Named (ot, []) -> if ((String.compare ot "") ==0) then "null_type" else ot
+  | Named (ot, tl) -> if ((String.compare ot "") ==0) then "null_type" else ot ^ "_" ^ (pr_list string_of_typ tl)
   | Array (et, r) -> (* An Hoa *)
     let rec repeat k = if (k == 0) then "" else "_arr" ^ (repeat (k-1)) in
     (string_of_typ et) ^ (repeat r)
@@ -793,14 +802,14 @@ let no_pos1 = { Lexing.pos_fname = "";
 let res_name = "res"
 (* let null_name = "null" *)
 let null_name = "_null"
-let null_type = Named ""
+let null_type = Named ("", [])
 
 let is_null name =
   name == null_name
 
 let is_null_type t  =
   match t with
-  | Named "" -> true
+  | Named ("", []) -> true
   | _ -> false
 
 let inline_field_expand = "_"
@@ -854,7 +863,7 @@ let finalize_name = "finalize"
 let acquire_name = "acquire"
 let release_name = "release"
 let lock_name = "lock"
-let lock_typ = Named "lock"
+let lock_typ = Named ("lock", [])
 
 let ls_name = "LS"
 let lsmu_name = "LSMU"
@@ -866,11 +875,11 @@ let waitlevel_typ = Int
 let level_pred = "level"
 let level_name = "mu"
 let level_data_typ = Int
-let ls_typ = BagT (Named ls_data_typ)
+let ls_typ = BagT (Named (ls_data_typ, []))
 let lsmu_typ = BagT (Int)
 
 let thrd_name = "thrd"
-let thrd_typ = Named "thrd"
+let thrd_typ = Named ("thrd", [])
 
 
 (*precluded files*)

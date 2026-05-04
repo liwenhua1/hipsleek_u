@@ -248,6 +248,7 @@ and compile_pre (prog : C.prog_decl) (proc : C.proc_decl) (pre : CF.formula) jav
         I.proc_loc = no_pos;
         I.proc_test_comps = None } in
     let ddef = { I.data_name = (C.unmingle_name proc.C.proc_name) ^ "_PRE";
+                 I.data_type_vars = [];
                  I.data_fields = fields;
                  I.data_pos = no_pos;
                  I.data_parent_name = "Object";
@@ -332,6 +333,7 @@ and compile_post (prog : C.prog_decl) (proc : C.proc_decl) (post : CF.formula) (
         I.proc_loc = no_pos;
         I.proc_test_comps =None } in
     let ddef = { I.data_name = (C.unmingle_name proc.C.proc_name) ^ "_POST";
+                 I.data_type_vars = [];
                  I.data_fields = fields;
                  I.data_pos = no_pos;
                  I.data_parent_name = "Object";

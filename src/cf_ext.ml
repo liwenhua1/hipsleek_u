@@ -100,7 +100,7 @@ let add_data_tags_to_obj cdata =
       (* let () = data_decl_obj # add_fields dn flds in *)
       let fields = List.map (fun ((t,id),_) -> t) fields in
       let fields = List.filter (fun t -> Globals.is_node_typ t ) fields in
-      let fields = List.map (fun t -> match t with Named id -> id | _ -> failwith ("impossible"^x_loc)) fields in
+      let fields = List.map (fun t -> match t with Named (id, _) -> id | _ -> failwith ("impossible"^x_loc)) fields in
       let () = HipUtil.data_scc_obj # replace x_loc dn fields in
       ()
     ) cdata in

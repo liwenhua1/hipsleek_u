@@ -87,7 +87,7 @@ preddef:
 
 ptr:
   [ "ptr" LEFTA
-      [ x = id -> SpecVar (Named "GenNode", x, Unprimed) ]
+      [ x = id -> SpecVar (Named ("GenNode", []), x, Unprimed) ]
   ];  
 
 lbl:

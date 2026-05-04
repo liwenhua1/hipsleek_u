@@ -319,7 +319,7 @@ exp:
                 in Mult (ni, y, loc)
           | x = specvar             -> Var (x, loc)
           | x = INT                 -> IConst (int_of_string x, loc) 
-          | NATIVEINT               -> Var (SpecVar(Named "abc", "abc", Unprimed),loc)
+          | NATIVEINT               -> Var (SpecVar(Named ("abc", []), "abc", Unprimed),loc)
         ]
     ];
 

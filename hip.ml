@@ -609,7 +609,7 @@ let process_source_full source =
                              ^" : "^dd.C.data_name^" -> " in
             let types_list = List.map (fun ((t,_),_) -> match t with
                 | Int -> "Z"
-                | Named i -> i
+                | Named (i, _) -> i
                 | _ -> "Unknown"
               ) dd.C.data_fields in
             let param_types = String.concat " -> " types_list in
@@ -629,7 +629,7 @@ let process_source_full source =
                 match (CP.type_of_spec_var sv) with
                 | Void -> "A"
                 | Int -> "Z"
-                | Named i -> i
+                | Named (i, _) -> i
                 | _ -> "Uknown"
               ) vd.C.view_vars) in
             let view_name = "  Parameter "^vd.C.view_name^" : "^
@@ -660,7 +660,7 @@ let process_source_full source =
                 match (CP.type_of_spec_var sv) with
                 | Void -> "A"
                 | Int -> "Z"
-                | Named i -> i
+                | Named (i, _) -> i
                 | _ -> "Uknown"
               ) rd.C.rel_vars) in "  Parameter "^rd.C.rel_name^" : "^rel_params_arrow^
                                   " -> formula.\n"

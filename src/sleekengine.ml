@@ -128,6 +128,7 @@ let unexpected_cmd = new Gen.stack_pr "unexpected-cmd" pr_id (=)
   we'll need to make them into a stack of scopes.
 *)
 let iobj_def =  {I.data_name = "Object";
+                 I.data_type_vars = [];
                  I.data_fields = [];
                  I.data_pos = no_pos;
                  I.data_parent_name = "";
@@ -137,6 +138,7 @@ let iobj_def =  {I.data_name = "Object";
                  I.data_methods = [] }
 
 let iexc_def =  {I.data_name = raisable_class;
+                 I.data_type_vars = [];
                  I.data_fields = [];
                  I.data_pos = no_pos;
                  I.data_parent_name = "Object";
@@ -146,6 +148,7 @@ let iexc_def =  {I.data_name = raisable_class;
                  I.data_methods = [] }
 
 let ithrd_def =  {I.data_name = Globals.thrd_name ;
+                  I.data_type_vars = [];
                   I.data_fields = [];
                   I.data_pos = no_pos;
                   I.data_parent_name = "Object";
@@ -156,6 +159,7 @@ let ithrd_def =  {I.data_name = Globals.thrd_name ;
 
 (* Synthetic data definitions for built-in types to support p::int syntax *)
 let int_type_def =  {I.data_name = "int";
+                     I.data_type_vars = [];
                      I.data_fields = [];
                      I.data_pos = no_pos;
                      I.data_parent_name = "";
@@ -165,6 +169,7 @@ let int_type_def =  {I.data_name = "int";
                      I.data_methods = [] }
 
 let str_type_def =  {I.data_name = "str";
+                     I.data_type_vars = [];
                      I.data_fields = [];
                      I.data_pos = no_pos;
                      I.data_parent_name = "";
@@ -174,6 +179,7 @@ let str_type_def =  {I.data_name = "str";
                      I.data_methods = [] }
 
 let bool_type_def =  {I.data_name = "bool";
+                      I.data_type_vars = [];
                       I.data_fields = [];
                       I.data_pos = no_pos;
                       I.data_parent_name = "";
@@ -183,6 +189,7 @@ let bool_type_def =  {I.data_name = "bool";
                       I.data_methods = [] }
 
 let float_type_def =  {I.data_name = "float";
+                       I.data_type_vars = [];
                        I.data_fields = [];
                        I.data_pos = no_pos;
                        I.data_parent_name = "";
@@ -3185,7 +3192,7 @@ let process_print_command pcmd0 =
           let n = d.Cast.data_name in
           let fields = List.map (fun ((t,id),_) -> t) d.Cast.data_fields in
           let fields = List.filter (fun t -> is_node_typ t ) fields in
-          let fields = List.map (fun t -> match t with Named id -> id | _ -> failwith ("impossible"^x_loc)) fields in
+          let fields = List.map (fun t -> match t with Named (id, _) -> id | _ -> failwith ("impossible"^x_loc)) fields in
           let () = HipUtil.data_scc_obj # replace x_loc n fields in
       ()
     ) data_d_lst in

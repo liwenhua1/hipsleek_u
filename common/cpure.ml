@@ -1316,7 +1316,7 @@ let is_dupl_conj_diseq (f1:formula) (f2:formula) : bool =
 (* TODO: determine correct type of an exp *)
 let rec get_exp_type (e : exp) : typ =
   match e with
-  | Null _ -> Named ""
+  | Null _ -> Named ("", [])
   | Var (SpecVar (t, _, _), _) -> t
   | Level _ -> Globals.level_data_typ
   | IConst _ -> Int
@@ -1345,7 +1345,7 @@ let rec get_exp_type (e : exp) : typ =
       (* Type of a[i] is the type of the element of array a *)
       match t with
       | Array (et,_) -> et
-      | _ -> let () = failwith ("Cpure.get_exp_type : " ^ a ^ " is not an array variable") in Named ""
+      | _ -> let () = failwith ("Cpure.get_exp_type : " ^ a ^ " is not an array variable") in Named ("", [])
     end
   | Template _ -> Int
 
@@ -4022,9 +4022,9 @@ and build_relation_x relop alist10 alist20 lbl pos =
 
 
 and are_same_types (t1 : typ) (t2 : typ) = match t1 with
-  | Named c1 -> begin match t2 with
+  | Named (c1, _) -> begin match t2 with
       (* | _ -> false *)
-      | Named c2 -> c1 = c2 || c1 = "" || c2 = ""
+      | Named (c2, _) -> c1 = c2 || c1 = "" || c2 = ""
       | _ -> false (* An Hoa *)
     end
   | Array (et1, _) -> begin match t2 with

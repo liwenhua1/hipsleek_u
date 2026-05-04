@@ -224,10 +224,10 @@ and unify_type_modify (modify_flag:bool) (k1 : spec_var_kind) (k2 : spec_var_kin
     | Int, Float -> (tl,Some Float) (*LDK: support floating point*)
     | Float, Int -> (tl,Some Float) (*LDK*)
     | Tree_sh, Tree_sh -> (tl,Some Tree_sh)
-    | Named n1, Named n2 when (String.compare n1 "memLoc" = 0) || n1="" ->   (* k1 is primitive memory predicate *)
-      (tl, Some (Named n2))
-    | Named n1, Named n2 when (String.compare n2 "memLoc" = 0) || n2=""  ->   (* k2 is primitive memory predicate *)
-      (tl, Some (Named n1))
+    | Named (n1, _), Named (n2, tl2) when (String.compare n1 "memLoc" = 0) || n1="" ->   (* k1 is primitive memory predicate *)
+      (tl, Some (Named (n2, tl2)))
+    | Named (n1, tl1), Named (n2, _) when (String.compare n2 "memLoc" = 0) || n2=""  ->   (* k2 is primitive memory predicate *)
+      (tl, Some (Named (n1, tl1)))
     | t1, t2  -> (
         let () = Debug.ninfo_hprint (add_str  "t1 " (string_of_typ)) t1 no_pos in
         let () = Debug.ninfo_hprint (add_str  "t2 " (string_of_typ)) t2 no_pos in
@@ -437,15 +437,15 @@ and fresh_int_en en =
 (* TODO WN : NEED to re-check this function *)
 and trans_type (prog : I.prog_decl) (t : typ) (pos : loc) : typ =
   match t with
-  | Named c ->
+  | Named (c, tl) ->
     (try
        let todo_unk = x_add I.look_up_data_def_raw prog.I.prog_data_decls c
-       in Named c
+       in Named (c, tl)
      with
      | Not_found ->
        (try
           let todo_unk = I.look_up_view_def_raw x_loc prog.I.prog_view_decls c
-          in Named c
+          in Named (c, tl)
         with
         | Not_found ->
           (try
@@ -453,7 +453,8 @@ and trans_type (prog : I.prog_decl) (t : typ) (pos : loc) : typ =
              in Int
            with
            | Not_found -> (* An Hoa : cannot find the type, just keep the name. *)
-             if CF.view_prim_lst # mem c then Named c
+             if CF.view_prim_lst # mem c then Named (c, tl)
+             else if tl = [] then TypeVar c (* treat unknown unparameterized type names as type variables *)
              else
                (* if !inter then*)
                Err.report_error
@@ -470,7 +471,7 @@ and trans_type (prog : I.prog_decl) (t : typ) (pos : loc) : typ =
 
 and trans_type_back (te : typ) : typ =
   match te with
-  | Named n -> Named n
+  | Named (n, tl) -> Named (n, tl)
   | Array (t, d) -> Array (trans_type_back t, d) (* An Hoa *)
   | p -> p
 
@@ -1258,13 +1259,13 @@ and try_unify_data_type_args_x prog c v deref ies tlist pos =
   let is_builtin_type = List.mem c ["int"; "str"; "float"; "bool"; "NUM"; "INFInt"] in
   if is_builtin_type && deref = 0 then (
     (* For type expressions like p::int, just register the variable *)
-    let (n_tl,_) = x_add gather_type_info_var v tlist (Named c) pos in
+    let (n_tl,_) = x_add gather_type_info_var v tlist (Named (c, [])) pos in
     n_tl
   )
   else if (deref = 0) then (
     try (
       let ddef = x_add I.look_up_data_def_raw prog.I.prog_data_decls c in
-      let (n_tl,_) = x_add gather_type_info_var v tlist ((Named c)) pos in
+      let (n_tl,_) = x_add gather_type_info_var v tlist (Named (c, [])) pos in
       let fields = x_add_1 I.look_up_all_fields prog ddef in
       try
         (*fields may contain offset field and not-in-used*)
@@ -1301,7 +1302,7 @@ and try_unify_data_type_args_x prog c v deref ies tlist pos =
         done;
         c ^ !deref_str
       ) in
-      let (n_tl,_) = x_add gather_type_info_var v tlist ((Named holder_name)) pos in
+      let (n_tl,_) = x_add gather_type_info_var v tlist (Named (holder_name, [])) pos in
       let fields = x_add_1 I.look_up_all_fields prog base_ddecl in
       try
         let f tl arg ((ty,_),_,_,_)=
@@ -1361,7 +1362,7 @@ and try_unify_view_type_args_x prog c vdef v deref ies hoa tlist pos =
         done;
         dname ^ !s
       ) in
-      let (n_tl,_) = x_add gather_type_info_var v tlist ((Named expect_dname)) pos in
+      let (n_tl,_) = x_add gather_type_info_var v tlist (Named (expect_dname, [])) pos in
       n_tl
   ) in
   let () = if (String.length vdef.I.view_data_name) = 0  then fill_view_param_types vdef in
@@ -1623,7 +1624,7 @@ and gather_type_info_heap_x prog (h0 : IF.h_formula) tlist =
           (* Good user provides type for [rootptr] ==> done! *)
           let ddef = x_add I.look_up_data_def_raw prog.I.prog_data_decls s in
           (* let () = print_endline ("[gather_type_info_heap_x] root pointer type = " ^ ddef.I.data_name) in *)
-          (true, Named ddef.I.data_name)
+          (true, Named (ddef.I.data_name, []))
         with
         | Not_found -> (false,UNK) (* Lazy user ==> perform type reasoning! *) in
       (* After this, if type_found = false then we know that
@@ -1643,7 +1644,7 @@ and gather_type_info_heap_x prog (h0 : IF.h_formula) tlist =
           if (List.length dts = 1) then
             (* the field uniquely determines the data type ==> done! *)
             (* let () = print_endline ("[gather_type_info_heap_x] Only type " ^ (List.hd dts) ^ " has field " ^ s) in *)
-            (true,Named (List.hd dts))
+            (true,Named (List.hd dts, []))
           else
             (false,UNK) in
       (* Step 3: Collect the remaining type information *)
@@ -1664,7 +1665,7 @@ and gather_type_info_heap_x prog (h0 : IF.h_formula) tlist =
         if is_builtin_type then
           (* For built-in type expressions like p::int, register variable and process permissions *)
           (try
-             let (n_tl,_) = x_add gather_type_info_var v tlist (Named v_name) pos in
+             let (n_tl,_) = x_add gather_type_info_var v tlist (Named (v_name, [])) pos in
              let n_tl = x_add gather_type_info_perm perm n_tl in
              let n_tl = x_add gather_type_info_ann ann n_tl in
              let n_tl = x_add gather_type_info_param_ann ann_param n_tl in

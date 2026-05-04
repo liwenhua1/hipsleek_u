@@ -62,8 +62,8 @@ let typ_to_globals_typ (t: typ) : Globals.typ =
   | Bool -> Bool
   | Float -> Float
   | Int -> Int
-  | Null -> Named ""
-  | Named s -> Named s
+  | Null -> Named ("", [])
+  | Named s -> Named (s, [])
 
 let param_mod_to_iast_param_mod (pm : param_modifier) : I.param_modifier =
   match pm with
@@ -209,6 +209,7 @@ let data_decl_cons data_name data_fields =
   (* Stores data definition into SE.iprog *)
   let () = process_data_def {
     I.data_name = data_name;
+    I.data_type_vars = [];
     I.data_fields = df;
     I.data_parent_name = "Object";
     I.data_invs = [];
@@ -1174,7 +1175,7 @@ module ForwardVerifier = struct
     (* Follows flatten_to_bind *)
     let data_def =
       match t with
-      | Named data_name ->
+      | Named (data_name, _) ->
         I.look_up_data_def 2 no_pos SE.iprog.I.prog_data_decls data_name
       | _ -> raise (Invalid_argument ("type " ^ (Globals.string_of_typ t)
                                       ^ " is not a struct data type"))
@@ -1409,7 +1410,7 @@ module ForwardVerifier = struct
     let t = typ_to_globals_typ t in
     let data_def =
       match t with
-      | Named data_name ->
+      | Named (data_name, _) ->
         I.look_up_data_def 2 no_pos SE.iprog.I.prog_data_decls data_name
       | _ -> raise (Invalid_argument ("type " ^ (Globals.string_of_typ t)
                                       ^ " is not a struct data type"))

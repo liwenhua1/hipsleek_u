@@ -958,7 +958,7 @@ let view_decl_of_hprel iprog prog (hprel: CF.hprel) =
   (* let v_sf, v_un_str = norm_view_formula hprel_str vbody in *)
   let v_data_name =
     match (CP.type_of_spec_var vself) with 
-    | Named n -> n
+    | Named (n, _) -> n
     | _ -> ""
   in
   let vdecl_w_def = { vdecl with 
@@ -982,7 +982,7 @@ let elim_useless_vars svl =
 let mk_self_node typ_name f =
   try
     List.find (fun sv -> eq_str (CP.name_of_spec_var sv) Globals.self) (CF.fv f)
-  with _ -> CP.SpecVar (Named typ_name, Globals.self, Unprimed)
+  with _ -> CP.SpecVar (Named (typ_name, []), Globals.self, Unprimed)
   
 let unfolding_formula cprog f_unfold f =
   let f_views = CF.get_views f in

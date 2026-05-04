@@ -1006,7 +1006,7 @@ let elim_tail_pred iprog cprog pred =
   let self_node =
     try
       List.find (fun sv -> eq_str (CP.name_of_spec_var sv) Globals.self) (CF.fv pred_f)
-    with _ -> CP.SpecVar (Named pred.C.view_name, Globals.self, Unprimed)
+    with _ -> CP.SpecVar (Named (pred.C.view_name, []), Globals.self, Unprimed)
   in
   let base_cases = find_pred_base_case pred in
   try

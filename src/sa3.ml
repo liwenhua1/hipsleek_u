@@ -1816,7 +1816,7 @@ let match_one_hp_views_x iprog prog cur_m (vdcls: CA.view_decl list) def:(CP.spe
     let () = DD.ninfo_hprint (add_str "        vdcl.Cast.view_name:" pr_id) vdcl.Cast.view_name no_pos in
     let self_t = CP.type_of_spec_var r in
     if (List.length args) = ((List.length vdcl.Cast.view_vars) + 1) &&
-       self_t = (Named vdcl.Cast.view_data_name)
+       self_t = (Named (vdcl.Cast.view_data_name, []))
     then
       let () = DD.ninfo_hprint (add_str "        vdcl.Cast.view_name:" pr_id) vdcl.Cast.view_name no_pos in
       let f1 = Cformula.formula_of_heap def.Cformula.def_lhs no_pos in
@@ -2828,7 +2828,7 @@ let infer_shapes_divide_x iprog prog proc_name (constrs0: Cformula.hprel list) c
     match hp_def.Cformula.def_cat with
     | CP.HPRelDefn (hp,((CP.SpecVar (rt, r_id, rp)) as r),paras) -> begin
         match rt with
-        | Named id -> if String.compare id "" = 0  then
+        | Named (id, _) -> if String.compare id "" = 0  then
             let svl = (Cformula.h_fv hp_def.Cformula.def_lhs)@(List.fold_left (fun l (f,_) -> l@(Cformula.fv f)) [] hp_def.Cformula.def_rhs) in
             let r_svl = List.filter (fun ((CP.SpecVar (rt1, r_id1, rp1))) ->
                 String.compare r_id r_id1 = 0

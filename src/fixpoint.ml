@@ -873,7 +873,7 @@ let gen_slk_file_4fix prog file_name pre_rel_ids post_rel_ids rel_oblgs=
       let ptrs = l_svl@r_svl in
       let ptrs_node_used = List.fold_left (fun r t ->
           match t with
-          | Named ot -> if ((String.compare ot "") ==0) then r else r@[ot]
+          | Named (ot, _) -> if ((String.compare ot "") ==0) then r else r@[ot]
           | _ -> r
         ) [] (List.map CP.type_of_spec_var ptrs) in
       let nr1 = r1@(List.filter (fun sv -> CP.is_rel_typ sv) ptrs) in

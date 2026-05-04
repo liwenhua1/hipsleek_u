@@ -4455,7 +4455,7 @@ let infer_shape input file_name view_node keep_vars proc_name =
   let fmls_orig = Parse_shape.parse_shape input in
   let keep_vars = keep_vars @ ["NULL"] in
   x_tinfo_hp (add_str "Keep vars: " (pr_list (fun x -> x))) keep_vars no_pos;
-  let keep_vars = List.map (fun s -> SpecVar (Named "GenNode", s, Unprimed)) keep_vars in
+  let keep_vars = List.map (fun s -> SpecVar (Named ("GenNode", []), s, Unprimed)) keep_vars in
   let fmls = List.map (fun f -> filter_var_heap keep_vars f) fmls_orig in
   (*  Debug.info_hprint (add_str "Inferred shape (original) " (pr_list !CF.print_formula)) fmls_orig no_pos;*)
   (*  Debug.info_hprint (add_str "Inferred shape (filtered) " (pr_list !CF.print_formula)) fmls no_pos;*)

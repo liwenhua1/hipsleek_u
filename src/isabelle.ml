@@ -55,7 +55,7 @@ let rec isabelle_of_typ = function
                         Error.error_text = "NUM, RelT, HpT and AnnT not supported for Isabelle"}
   | TVar _ 
   (* | SLTyp *)
-  | Named _ 
+  | Named (_, _)
   | Array _ ->
     Error.report_error {Error.error_loc = no_pos; 
                         Error.error_text = "type var, array and named type not supported for Isabelle"}
@@ -67,7 +67,7 @@ let rec isabelle_of_typ = function
 
 (* pretty printing for spec_vars *)
 let isabelle_of_spec_var (sv : CP.spec_var) = match sv with
-  | CP.SpecVar (Named(id), v, p) -> v ^ (if CP.is_primed sv then Oclexer.primed_str else "")
+  | CP.SpecVar (Named(id, _), v, p) -> v ^ (if CP.is_primed sv then Oclexer.primed_str else "")
   | CP.SpecVar (Array(id), v, p) -> v ^ (if CP.is_primed sv then Oclexer.primed_str else "") (* An Hoa *)
   | CP.SpecVar (t, v, p) -> "(" ^ v ^ (if CP.is_primed sv then Oclexer.primed_str else "") ^ "::" ^ isabelle_of_typ t ^ ")"
 

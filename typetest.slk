@@ -49,7 +49,28 @@ checkentail x:int & x < 10 |- true.
 // Test 14: Type annotation with comparison (<=)
 checkentail x:int & x <= 100 |- true.
 
-// Test 15: Type annotation with equality constraint
+// ============================================================
+// User-defined polymorphic types: list[T] and tree[T]
+// ============================================================
+data list[T] { T hd ; list[T] tl }.
+data tree[T] { T val ; tree[T] left ; tree[T] right }.
+
+// Test 15: Polymorphic list type with type variable (provide tl=null for singleton)
+checkentail x::list[T]<tl = null> |- true.
+
+// Test 16: Concrete list instance with int element type
+checkentail x::list[int]<tl = null> |- true.
+
+// Test 17: Generic list heap shape with tail of same element type
+checkentail x::list[T]<tl = null> & y::list[T]<tl = null> |- true.
+
+// Test 18: Polymorphic binary tree node
+checkentail x::tree[T]<left = null, right = null> |- true.
+
+// Test 19: Concrete tree instance with int element type
+checkentail x::tree[int]<left = null, right = null> |- true.
+
+// Test 20: Type annotation with equality constraint
 checkentail x:int & x = 5 |- x = 5.
 
 // Test 16: Type annotation with inequality constraint
@@ -240,3 +261,31 @@ checkentail x:int/\str & y:bool/\float |- true.
 
 // Test 70: Intersection type consistency (true on itself)
 checkentail x:int/\str |- x:int/\str.
+
+// ============================================================
+// TypeVar Tests: Named Type Variables in Polymorphic Data Types
+// ============================================================
+
+// Pair type with two distinct type parameters T and U
+data pair[T,U] { T fst ; U snd }.
+
+// Test 71: Polymorphic pair: existential field values with type variables
+checkentail x::pair[T,U]<snd = b> |- true.
+
+// Test 72: Polymorphic pair: both fields existentially quantified
+checkentail x::pair[T,U]<fst = a, snd = b> |- true.
+
+// Test 73: Tree with type variable in left/right subtrees
+checkentail x::tree[T]<left = null, right = null> |- true.
+
+// Test 74: Tree with concrete element type
+checkentail x::tree[int]<left = null, right = null> |- true.
+
+// Test 75: Polymorphic list with tl = null (singleton node, type var)
+checkentail x::list[T]<tl = null> |- true.
+
+// Test 76: Multiple polymorphic list nodes with same element type
+checkentail x::list[T]<tl = null> & y::list[T]<tl = null> |- true.
+
+// Test 77: Two lists with different type variables are independently typed
+checkentail x::list[T]<tl = null> & y::list[U]<tl = null> |- true.

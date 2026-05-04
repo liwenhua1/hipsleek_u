@@ -766,9 +766,11 @@ let peek_heap_starminus =
 let peek_array_type =
    SHGram.Entry.of_parser "peek_array_type"
        (fun strm ->
-           match Stream.npeek 2 strm with
-             |[_;OSQUARE,_] -> (* An Hoa*) (* let () = print_endline "Array found!" in *) ()
-             (* |[_;OSQUARE,_;COMMA,_] -> (\* An Hoa*\) (\* let () = print_endline "Array found!" in *\) () *)
+           (* Only match true array types: identifier/type followed by [ ] or [ , ] *)
+           (* Do NOT match named type parameters like list[T] *)
+           match Stream.npeek 3 strm with
+             |[_;OSQUARE,_; CSQUARE,_] -> ()   (* e.g. int[] *)
+             |[_;OSQUARE,_; COMMA,_]   -> ()   (* e.g. int[,] multi-dimensional *)
              | _ -> raise Stream.Failure)
 
 let peek_pointer_type =
@@ -1062,7 +1064,9 @@ opt_pure_inv: [[t=OPT pure_inv -> t ]];
 
 data_decl:
     [[ dh=data_header ; db = data_body ; dinv = opt_pure_inv
-        -> {data_name = dh;
+        -> let (n, tv) = dh in
+        {data_name = n;
+            data_type_vars = tv;
             data_pos = get_pos_camlp4 _loc 1;
             data_fields = db;
             data_parent_name="Object"; (* Object; *)
@@ -1073,7 +1077,9 @@ data_decl:
 
 template_data_decl:
     [[ dh=template_data_header ; db = data_body
-        -> {data_name = dh;
+        -> let (n, tv) = dh in
+        {data_name = n;
+            data_type_vars = tv;
             data_pos = get_pos_camlp4 _loc 1;
             data_fields = db;
             data_parent_name="Object"; (* Object; *)
@@ -1082,13 +1088,24 @@ template_data_decl:
             data_is_template = true;
             data_methods = [];} ]];
 
-with_typed_var: [[`OSQUARE; typ; `CSQUARE -> ()]];
+
+
+data_type_param:
+    [[ `IDENTIFIER id -> TypeVar id
+     | `INT -> int_type
+     | `BOOL -> bool_type
+     | `FLOAT -> float_type
+     | `VOID -> void_type
+     | `INFINT_TYPE -> infint_type
+     | `ANN_KEY -> ann_type ]];
 
 data_header:
-    [[ `DATA; `IDENTIFIER t; OPT with_typed_var -> t ]];
+    [[ `DATA; `IDENTIFIER t; `OSQUARE; tv= LIST1 data_type_param SEP `COMMA; `CSQUARE -> (t, tv)
+     | `DATA; `IDENTIFIER t -> (t, []) ]];
 
 template_data_header:
-    [[ `TEMPL; `DATA; `IDENTIFIER t; OPT with_typed_var -> t ]];
+    [[ `TEMPL; `DATA; `IDENTIFIER t; `OSQUARE; tv= LIST1 data_type_param SEP `COMMA; `CSQUARE -> (t, tv)
+     | `TEMPL; `DATA; `IDENTIFIER t -> (t, []) ]];
 
 data_body:
       [[`OBRACE; fl=field_list2;`SEMICOLON; `CBRACE -> fl
@@ -1811,7 +1828,8 @@ heap_wr:
 
 heap_id:
   [[
-     `IDENTIFIER id -> (id, 0, 0, _loc)
+     `IDENTIFIER id; `OSQUARE; LIST1 typ SEP `COMMA; `CSQUARE -> (id, 0, 0, _loc) (* type params ignored for now *)
+   | `IDENTIFIER id -> (id, 0, 0, _loc)
    (* definitions below is for cparser *)
    | `VOID; `STAR -> ("void", 1, 0, _loc)
    | `INT; `STAR -> ("int", 1, 0, _loc)
@@ -2955,7 +2973,8 @@ non_array_type:
    | `BAG               -> bag_type
    | `ABSTRACT          -> void_type
    | `BAG; `OPAREN; t = non_array_type ; `CPAREN -> BagT t
-   | `IDENTIFIER id      -> Named id
+   | `IDENTIFIER id; `OSQUARE; tl = LIST1 SELF SEP `COMMA; `CSQUARE -> Named (id, tl)
+   | `IDENTIFIER id; tl=opt_type_list -> Named (id, tl)
    | `OPAREN; t=typ; `CPAREN -> t
    | `OPAREN; t1=non_array_type; `COMMA; t2=non_array_type; `CPAREN -> Tup2 (t1,t2)
    | t=rel_header_view   -> let tl,_ = List.split t.Iast.rel_typed_vars in RelT tl ]];
@@ -2986,6 +3005,10 @@ id_list_opt:[[t= LIST0 id SEP `COMMA ->t]];
 int_list:[[t= LIST1 integer_literal SEP `SEMICOLON ->t]];
 
 list_int_list:[[t= LIST1 int_list SEP `COMMA ->t]];
+
+type_list: [[`LT; t= LIST1 typ SEP `COMMA; `GT -> t]];
+
+opt_type_list: [[ t= OPT type_list -> [] ]];
 
 id_star_list:[[t=LIST1 id_star SEP `COMMA -> t]];
 
@@ -3050,6 +3073,8 @@ type_var:
 type_var_list: [[`OSQUARE; t= LIST1 type_var SEP `COMMA; `CSQUARE -> ()]];
 
 opt_type_var_list: [[ t= OPT type_var_list -> [] ]];
+
+
 
 fct_arg_list: [[ t=LIST1 cid SEP `COMMA -> t]];
 
@@ -3301,6 +3326,7 @@ hprogn:
         | Coercion_list cdef -> coercion_defs := cdef :: !coercion_defs in
     let todo_unk = List.map choose t in
     let obj_def = { data_name = "Object";
+                    data_type_vars = [];
                     data_pos = no_pos;
                     data_fields = [];
                     data_parent_name = "";
@@ -3309,6 +3335,7 @@ hprogn:
                     data_is_template = false;
                     data_methods = [] } in
     let string_def = { data_name = "String";
+                       data_type_vars = [];
                        data_fields = [];
                        data_pos = no_pos;
                        data_parent_name = "Object";
@@ -3434,6 +3461,7 @@ class_decl:
 		(* An Hoa [22/08/2011] : blindly add the members as non-inline because we do not support inline fields in classes. TODO revise. *)
 		let t1 = List.map (fun ((t,id), p) -> ((t,id), p, false, (gen_field_ann t) (* F_NO_ANN *))) t1 in
       let cdef = { data_name = id;
+                   data_type_vars = [];
                    data_pos = get_pos_camlp4 _loc 2;
                    data_parent_name = un_option par "Object";
                    data_fields = t1;
@@ -3655,7 +3683,7 @@ constructor_header:
     (*let static_specs, dynamic_specs = split_specs $5 in*)
 		(*if Util.empty dynamic_specs then*)
     let cur_file = proc_files # top in
-      mkProc cur_file id flgs "" None true ot fpl (Named id) None osl (F.mkEFalseF ()) (get_pos_camlp4 _loc 1) None
+      mkProc cur_file id flgs "" None true ot fpl (Named (id, [])) None osl (F.mkEFalseF ()) (get_pos_camlp4 _loc 1) None
     (*	else
 		  report_error (get_pos_camlp4 _loc 1) ("constructors have only static speficiations");*) ]];
 
@@ -4188,7 +4216,7 @@ postfix_expression:
 cast_expression:
  [[ `OPAREN; e=expression; `CPAREN; ue=unary_expression_not_plusminus ->
 	  (match e with
-		| Var v -> Cast { exp_cast_target_type = Named v.exp_var_name; (*TODO: fix this *)
+		| Var v -> Cast { exp_cast_target_type = Named (v.exp_var_name, []); (*TODO: fix this *)
                       exp_cast_body = ue;
                       exp_cast_pos = get_pos_camlp4 _loc 1 }
 		| _ -> report_error (get_pos_camlp4 _loc 2) ("Expecting a type"))

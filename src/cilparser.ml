@@ -622,7 +622,7 @@ let create_void_pointer_casting_proc (typ_name: string) : Iast.proc_decl =
           | "char"  -> "<_,q>"
           | _ -> (
               try
-                let data_decl = tbl_data_decl # find ~loc:x_loc (Globals.Named base_data) in
+                let data_decl = tbl_data_decl # find ~loc:x_loc (Globals.Named (base_data, [])) in
                 match data_decl.Iast.data_fields with
                 | []   -> report_error no_pos "create_void_pointer_casting_proc: Invalid data_decl fields"
                 | [hd] -> "<_>"
@@ -781,7 +781,7 @@ and create_logical_not_proc (typ: Globals.typ) : Iast.proc_decl =
   with Not_found -> (
       let proc = (
         match typ with
-        | Globals.Named typ_name -> (
+        | Globals.Named (typ_name, _) -> (
             typ_name ^ " " ^ proc_name ^ "(" ^ typ_name ^ " param)\n" ^
             "  case { param =  null -> ensures res != null;\n" ^
             "         param != null -> ensures res = null; }\n"
@@ -812,7 +812,7 @@ and create_bool_casting_proc (typ: Globals.typ) : Iast.proc_decl =
   with Not_found -> (
       let proc = (
         match typ with
-        | Globals.Named typ_name -> (
+        | Globals.Named (typ_name, _) -> (
             "bool " ^ proc_name ^ "(" ^ typ_name ^ " param)\n" ^
             "  case { param =  null -> ensures !res;\n" ^
             "         param != null -> ensures res; }\n"
@@ -1094,7 +1094,7 @@ and gather_addrof_exp (e: Cil.exp) : unit =
                   let addr_data_decl = tbl_data_decl # find ~loc:x_loc addr_data_typ in
                   let addr_data_name =
                     begin match addr_data_typ with
-                    | Globals.Named s -> s
+                    | Globals.Named (s, _) -> s
                     | _ -> report_error pos "gather_addrof_exp: unexpected type!"
                     end in
                   let addr_var_decl =
@@ -1124,7 +1124,7 @@ and gather_addrof_exp (e: Cil.exp) : unit =
                   let addr_data_decl = tbl_data_decl # find ~loc:x_loc addr_data_typ in
                   let addr_data_name =
                     begin match addr_data_typ with
-                    | Globals.Named s -> s
+                    | Globals.Named (s, _) -> s
                     | _ -> report_error pos "gather_addrof_exp: unexpected type!"
                     end in
                   let addr_var_decl =
@@ -1145,7 +1145,7 @@ and gather_addrof_exp (e: Cil.exp) : unit =
                     let addr_data_decl = tbl_data_decl # find ~loc:x_loc addr_data_typ in
                     let addr_data_name =
                       begin match addr_data_typ with
-                      | Globals.Named s -> s
+                      | Globals.Named (s, _) -> s
                       | _ -> report_error pos "gather_addrof_exp: unexpected type!"
                       end in
                     let addr_var_decl =
@@ -1172,7 +1172,7 @@ and gather_addrof_exp (e: Cil.exp) : unit =
                 let addr_ddecl = tbl_data_decl # find ~loc:x_loc addr_dtyp in
                 let addr_dname = (
                   match addr_dtyp with
-                  | Globals.Named s -> s
+                  | Globals.Named (s, _) -> s
                   | _ -> report_error pos "gather_addrof_exp: unexpected type!"
                 ) in
                 let addr_vdecl = (
@@ -1192,7 +1192,7 @@ and gather_addrof_exp (e: Cil.exp) : unit =
               (*     let ddecl = Hashtbl.find tbl_data_decl dtyp in *)
               (*     let dname = ( *)
               (*       match dtyp with *)
-              (*       | Globals.Named s -> s *)
+              (*       | Globals.Named (s, _) -> s *)
               (*       | _ -> report_error pos "gather_addrof_exp: unexpected type!" *)
               (*     ) in *)
               (*     (dtyp, dname, ddecl) *)
@@ -1304,7 +1304,7 @@ and translate_typ_x (t: Cil.typ) pos : Globals.typ =
 		            | Cil.TInt(Cil.IChar, _) -> "char_star"
                 | _ -> (Globals.string_of_typ value_typ) ^ "_star"
               in
-              let dtype = Globals.Named dname in
+              let dtype = Globals.Named (dname, []) in
 (*              let offset_field = match ty with*)
 (*                | Cil.TInt(Cil.IChar, _) -> ((dtype, str_offset), no_pos, false, (gen_field_ann dtype))*)
 (*                | _ -> ((Int, str_offset), no_pos, false, (gen_field_ann Int)) (*other types have an integer offset*)*)
@@ -1332,7 +1332,7 @@ and translate_typ_x (t: Cil.typ) pos : Globals.typ =
     | Cil.TNamed _ ->                                          (* typedef type *)
       let ty = get_core_cil_typ t in
       translate_typ ty pos
-    | Cil.TComp (comp, _) -> Globals.Named comp.Cil.cname                          (* struct or union type*)
+    | Cil.TComp (comp, _) -> Globals.Named (comp.Cil.cname, [])                     (* struct or union type*)
     | Cil.TEnum _ -> report_error pos "TRUNG TODO: handle TEnum later!"
     | Cil.TBuiltin_va_list _ -> report_error pos "TRUNG TODO: handle TBuiltin_va_list later!" in
   (* return *)
@@ -1373,8 +1373,8 @@ and translate_var_decl (vinfo: Cil.varinfo) : Iast.exp =
     | Globals.Bool
     | Globals.Float
     | Globals.Array _
-    | Globals.Named "void_star" -> Iast.mkVarDecl new_ty [(name, None, pos)] pos
-    | Globals.Named typ_name -> (
+    | Globals.Named ("void_star", _) -> Iast.mkVarDecl new_ty [(name, None, pos)] pos
+    | Globals.Named (typ_name, _) -> (
         if (need_init) then (
           let init_data = Iast.mkNew typ_name [] pos in
           Iast.mkVarDecl new_ty [(name, Some init_data, pos)] pos
@@ -1407,7 +1407,7 @@ and translate_fieldinfo (field: Cil.fieldinfo) (lopt: Cil.location option)
   let ftyp = field.Cil.ftype in
   match ftyp with
   | Cil.TComp (comp, _) ->
-    let ty = Globals.Named comp.Cil.cname in
+    let ty = Globals.Named (comp.Cil.cname, []) in
     ((ty, name), pos, true, (gen_field_ann ty) (* Iast.F_NO_ANN *))                     (* struct ~~> inline data *)
   | Cil.TPtr (ty, _) ->
     let _ = Debug.ninfo_hprint (add_str "ftyp" string_of_cil_typ) ftyp no_pos in
@@ -1430,7 +1430,7 @@ and translate_compinfo (comp: Cil.compinfo) (lopt: Cil.location option) : unit =
   let _ = Debug.ninfo_hprint (add_str "name" pr_id) name no_pos in
   let fields = List.map (fun x -> translate_fieldinfo x lopt) comp.Cil.cfields in
   let datadecl = Iast.mkDataDecl name fields "Object" [] false [] in
-  tbl_data_decl # add ~loc:x_loc (Globals.Named name) datadecl;
+  tbl_data_decl # add ~loc:x_loc (Globals.Named (name, [])) datadecl;
 
 
 and translate_unary_operator (op : Cil.unop) pos : Iast.uni_op =
@@ -1635,7 +1635,7 @@ and translate_exp_x (e: Cil.exp) : Iast.exp =
       else (
         (* do casting *)
         match output_typ, input_typ with
-        | Globals.Named otyp_name, Globals.Named ityp_name ->
+        | Globals.Named (otyp_name, _), Globals.Named (ityp_name, _) ->
           if (ityp_name = "void_star") then (
             let cast_proc = create_void_pointer_casting_proc otyp_name in
             Iast.mkCallNRecv cast_proc.Iast.proc_name None [input_exp] None None pos
@@ -1644,10 +1644,10 @@ and translate_exp_x (e: Cil.exp) : Iast.exp =
             let cast_proc = create_pointer_casting_proc ityp_name otyp_name in
             Iast.mkCallNRecv cast_proc.Iast.proc_name None [input_exp] None None pos
           )
-        | Globals.Named otyp_name, Globals.Int ->
+        | Globals.Named (otyp_name, _), Globals.Int ->
           let cast_proc = create_int_to_pointer_casting_proc otyp_name in
           Iast.mkCallNRecv cast_proc.Iast.proc_name None [input_exp] None None pos
-        | Globals.Int, Globals.Named ityp_name ->
+        | Globals.Int, Globals.Named (ityp_name, _) ->
           (* let cast_proc = create_pointer_to_int_casting_proc ityp_name in *)
           (* Iast.mkCallNRecv cast_proc.Iast.proc_name None [input_exp] None pos *)
           (*Loc: should have a systematic way to handle deep data structures (e.g cll) with arith *)
@@ -2380,7 +2380,7 @@ and translate_init (init: Cil.init) (lopt: Cil.location option) : Iast.exp =
       let newtyp = translate_typ typ pos in
       match newtyp with
       (* translate data structure *)
-      | Globals.Named newtyp_name ->
+      | Globals.Named (newtyp_name, _) ->
         (* collect init fields and store in a hashtbl *)
         let tbl_fields_init = Hashtbl.create 1 in
         List.iter (fun x ->
@@ -2480,7 +2480,7 @@ and translate_fundec_x (fundec: Cil.fundec) (lopt: Cil.location option) : Iast.p
     match fheader.Cil.vtype with
     | Cil.TFun (ty, params, _, _) -> (*translate_typ ty pos*)
       (match ty with
-       | Cil.TComp (comp, _) -> (Globals.Named comp.Cil.cname)
+       | Cil.TComp (comp, _) -> (Globals.Named (comp.Cil.cname, []))
        | Cil.TPtr (ty1, _) when (is_cil_struct_pointer ty) ->
          (translate_typ ty1 pos)
        | _ -> (translate_typ ty pos)
@@ -2498,7 +2498,7 @@ and translate_fundec_x (fundec: Cil.fundec) (lopt: Cil.location option) : Iast.p
           let (name, ty, _) = p in
           let (param_ty, param_mod) = (match ty with
               | Cil.TComp (comp, _) ->
-                (Globals.Named comp.Cil.cname, Iast.CopyMod)
+                (Globals.Named (comp.Cil.cname, []), Iast.CopyMod)
               | Cil.TPtr (ty1, _) when (is_cil_struct_pointer ty) -> begin
                   (* let _ = Debug.info_hprint (add_str "name" pr_id) "2" no_pos in *)
                   let ityp = translate_typ ty1 no_pos in
