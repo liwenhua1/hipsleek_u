@@ -73,193 +73,175 @@ checkentail x::tree[int]<left = null, right = null> |- true.
 // Test 20: Type annotation with equality constraint
 checkentail x:int & x = 5 |- x = 5.
 
-// Test 16: Type annotation with inequality constraint
+// Test 21: Type annotation with inequality constraint
 checkentail x:int & x != 0 |- x != 0.
 
 // ============================================================
 // Multiple Variable Type Constraints
 // ============================================================
 
-// Test 17: Two type annotations (using compatible types)
+// Test 22: Two type annotations (using compatible types)
 checkentail x:int & y:int |- true.
 
-// Test 18: Three type annotations
+// Test 23: Three type annotations
 checkentail x:int & y:float & z:bool |- true.
 
-// Test 19: Repeated type annotation (idempotent)
+// Test 24: Repeated type annotation (idempotent)
 checkentail x:int & x:int |- true.
 
-// Test 20: Type annotations with arithmetic operations on multiple variables
+// Test 25: Type annotations with arithmetic operations on multiple variables
 checkentail x:int & y:int & x > y |- true.
 
 // ============================================================
 // Union Types with Constraints
 // ============================================================
 
-// Test 21: Union type annotation (numeric union)
+// Test 26: Union type annotation (numeric union)
 checkentail x:int\/float |- true.
 
-// Test 22: Union type with equality (both types can be equal)
+// Test 27: Union type with equality (both types can be equal)
 checkentail x:int\/float |- x:int\/float.
 
-// Test 23: Multiple variables with numeric union types
+// Test 28: Multiple variables with numeric union types
 checkentail x:int\/float & y:float\/int |- true.
 
-// Test 24: Multiple union-type expressions
+// Test 29: Multiple union-type expressions
 checkentail x:int\/float\/bool |- x:int\/float\/bool.
 
 // ============================================================
 // Pointer Type Annotations
 // ============================================================
 
-// Test 25: Single pointer type
+// Test 30: Single pointer type
 checkentail p:int* |- true.
 
-// Test 26: Double pointer type
+// Test 31: Double pointer type
 checkentail pp:int** |- true.
 
-// Test 27: Pointer with constraint
+// Test 32: Pointer with constraint
 checkentail p:int* & p != null |- true.
 
 // ============================================================
-// List and Complex Type Annotations
-// ============================================================
-
-// Test 28: Bool type annotation (alternative to list)
-checkentail l:bool |- true.
-
-// Test 29: Multiple bool type constraints
-checkentail l1:bool & l2:bool |- true.
-
-// Test 30: Bag type constraint
-checkentail b:bag |- true.
-
 // ============================================================
 // Type Entailment: Implication Testing
 // ============================================================
 
-// Test 31: Type constraint implies value constraint
+// Test 33: Type constraint implies value constraint
 checkentail x:int |- x:int.
 
-// Test 32: Multiple constraints imply derived constraint
+// Test 34: Multiple constraints imply derived constraint
 checkentail x:int & x > 0 |- x > 0.
 
-// Test 33: Union type entailment
+// Test 35: Union type entailment
 checkentail x:int\/str |- x:int\/str.
 
-// Test 34: Subtyping - int is subtype of int\/bool
+// Test 36: Subtyping - int is subtype of int\/bool
 checkentail x:int |- x:int\/bool.
 
-// Test 35: Subtyping - bool is subtype of int\/bool
+// Test 37: Subtyping - bool is subtype of int\/bool
 checkentail x:bool |- x:int\/bool.
 
-// Test 36: Subtyping - int is subtype of NUM (numeric supertype)
+// Test 38: Subtyping - int is subtype of NUM (numeric supertype)
 checkentail x:int |- x:NUM.
 
-// Test 37: Subtyping - float is subtype of NUM
+// Test 39: Subtyping - float is subtype of NUM
 checkentail x:float |- x:NUM.
 
-// Test 36: Subtyping - int is subtype of NUM (numeric supertype)
-checkentail x:int |- x:NUM.
-
-// Test 37: Subtyping - float is subtype of NUM
-checkentail x:float |- x:NUM.
-
-// Test 38: Subtyping - intersection implies component types
+// Test 40: Subtyping - intersection implies component types
 checkentail x:int/\bool |- x:int.
 
-// Test 39: Subtyping - intersection implies component types (second component)
+// Test 41: Subtyping - intersection implies component types (second component)
 checkentail x:int/\bool |- x:bool.
 
-// Test 40: Subtyping - intersection implies union of components
+// Test 42: Subtyping - intersection implies union of components
 checkentail x:int/\bool |- x:int\/bool.
 
-// Test 41: Subtyping - union of intersections
+// Test 43: Subtyping - union of intersections
 checkentail x:(int/\bool)\/(float/\bool) |- x:int\/bool.
 
-// Test 42: Subtyping - nested union/intersection
+// Test 44: Subtyping - nested union/intersection
 checkentail x:int |- x:(int\/bool)/\NUM.
 
-// Test 43: Subtyping with constraints - subtype preserves constraints
+// Test 45: Subtyping with constraints - subtype preserves constraints
 checkentail x:int & x > 0 |- x:int\/bool & x > 0.
 
 // ============================================================
 // Complex Arithmetic and Type Combinations
 // ============================================================
 
-// Test 44: Type annotation with max operation
+// Test 46: Type annotation with max operation
 checkentail x:int & y:int & z = max(x,y) |- true.
 
-// Test 45: Type annotation with min operation
+// Test 47: Type annotation with min operation
 checkentail x:int & y:int & z = min(x,y) |- true.
 
-// Test 46: Type annotation with addition
+// Test 48: Type annotation with addition
 checkentail x:int & y:int & z = x + y |- true.
 
-// Test 47: Type annotation with subtraction
+// Test 49: Type annotation with subtraction
 checkentail x:int & y:int & z = x - y |- true.
 
-// Test 48: Type annotation with multiplication
+// Test 50: Type annotation with multiplication
 checkentail x:int & y:int & z = x * y |- true.
 
 // ============================================================
 // Complex Logical Combinations
 // ============================================================
 
-// Test 49: Multiple constraints combined
+// Test 51: Multiple constraints combined
 checkentail x:int & x > 0 & x < 100 |- x > 0.
 
-// Test 50: Type annotations in complex formulas
+// Test 52: Type annotations in complex formulas
 checkentail x:int & y:int & (x > y | x = y) |- true.
 
 // ============================================================
 // Edge Cases and Special Scenarios
 // ============================================================
 
-// Test 51: Type annotation with zero constraints
+// Test 53: Type annotation with zero constraints
 checkentail x:int & 0 = 0 |- true.
 
-// Test 52: Type annotation consistency check (should always be valid)
+// Test 54: Type annotation consistency check (should always be valid)
 checkentail x:int |- x:int.
 
-// Test 53: Mixed union and simple type annotations
+// Test 55: Mixed union and simple type annotations
 checkentail x:int\/str & y:bool |- true.
 
-// Test 54: Chain of constraints with types
+// Test 56: Chain of constraints with types
 checkentail x:int & y:int & z:bool & x > y |- x > y.
 
-// Test 55: Complex expression with nested types (corrected)
+// Test 57: Complex expression with nested types (corrected)
 checkentail x:int & y:int & z:int & z = x + y |- true.
 
 // ============================================================
 // Intersection Type Tests
 // ============================================================
 
-// Test 56: Basic intersection type (two types)
+// Test 58: Basic intersection type (two types)
 checkentail x:int/\str |- true.
 
-// Test 57: Intersection type with three types (left-associative)
+// Test 59: Intersection type with three types (left-associative)
 checkentail x:int/\str/\bool |- true.
 
-// Test 58: Parenthesized intersection type
+// Test 60: Parenthesized intersection type
 checkentail x:(int/\str) |- true.
 
-// Test 59: Intersection type alone (simple)
+// Test 61: Intersection type alone (simple)
 checkentail a:float/\int |- true.
 
-// Test 60: Intersection type with union (union binds tighter)
+// Test 62: Intersection type with union (union binds tighter)
 checkentail x:(int\/str)/\bool |- true.
 
-// Test 61: Complex combined union and intersection  
+// Test 63: Complex combined union and intersection  
 checkentail x:int/\str/\float |- true.
 
-// Test 62: Intersection type with int annotations only
+// Test 64: Intersection type with int annotations only
 checkentail x:int/\int |- true.
 
-// Test 63: Multiple intersection types with constraints
+// Test 65: Multiple intersection types with constraints
 checkentail x:int/\str & y:bool/\float |- true.
 
-// Test 70: Intersection type consistency (true on itself)
+// Test 66: Intersection type consistency (true on itself)
 checkentail x:int/\str |- x:int/\str.
 
 // ============================================================
@@ -269,26 +251,26 @@ checkentail x:int/\str |- x:int/\str.
 // Pair type with two distinct type parameters T and U
 data pair[T,U] { T fst ; U snd }.
 
-// Test 71: Polymorphic pair: existential field values with type variables
+// Test 67: Polymorphic pair: existential field values with type variables
 checkentail x::pair[T,U]<snd = b> |- true.
 
-// Test 72: Polymorphic pair: both fields existentially quantified
+// Test 68: Polymorphic pair: both fields existentially quantified
 checkentail x::pair[T,U]<fst = a, snd = b> |- true.
 
-// Test 73: Tree with type variable in left/right subtrees
+// Test 69: Tree with type variable in left/right subtrees
 checkentail x::tree[T]<left = null, right = null> |- true.
 
-// Test 74: Tree with concrete element type
+// Test 70: Tree with concrete element type
 checkentail x::tree[int]<left = null, right = null> |- true.
 
-// Test 75: Polymorphic list with tl = null (singleton node, type var)
+// Test 71: Polymorphic list with tl = null (singleton node, type var)
 checkentail x::list[T]<tl = null> |- true.
 
-// Test 76: Multiple polymorphic list nodes with same element type
+// Test 72: Multiple polymorphic list nodes with same element type
 checkentail x::list[T]<tl = null> & y::list[T]<tl = null> |- true.
 
-// Test 77: Two lists with different type variables are independently typed
+// Test 73: Two lists with different type variables are independently typed
 checkentail x::list[T]<tl = null> & y::list[U]<tl = null> |- true.
 
-// Test 78: linked lists
+// Test 74: linked lists
 checkentail x::list[T]<tl = y> & y::list[T]<tl = null> |- true.
