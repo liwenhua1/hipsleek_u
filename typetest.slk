@@ -289,3 +289,6 @@ checkentail x::list[T]<tl = null> & y::list[T]<tl = null> |- true.
 
 // Test 77: Two lists with different type variables are independently typed
 checkentail x::list[T]<tl = null> & y::list[U]<tl = null> |- true.
+
+// Test 78: linked lists
+checkentail x::list[T]<tl = y> & y::list[T]<tl = null> |- true.
