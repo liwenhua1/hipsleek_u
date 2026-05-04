@@ -267,13 +267,13 @@ checkentail x::tree[int]<left = null, right = null> |- true.
 checkentail x::list[T]<tl = null> |- true.
 
 // Test 72: Multiple polymorphic list nodes with same element type
-checkentail x::list[T]<tl = null> & y::list[T]<tl = null> |- true.
+checkentail x::list[T]<tl = null> * y::list[T]<tl = null> |- true.
 
 // Test 73: Two lists with different type variables are independently typed
-checkentail x::list[T]<tl = null> & y::list[U]<tl = null> |- true.
+checkentail x::list[T]<tl = null> * y::list[U]<tl = null> |- true.
 
 // Test 74: linked lists
-checkentail x::list[T]<tl = y> & y::list[T]<tl = null> |- true.
+checkentail x::list[T]<tl = y> * y::list[T]<tl = null> |- true.
 
 // Test 75: linked lists and type parameters
-checkentail x::list[T]<tl = y> & y::list[U]<tl = null> |- false.
+checkentail x::list[T]<tl = y> * y::list[U]<tl = null> |- false.
