@@ -18,7 +18,7 @@ let result_file_name = "res"
 let log_all_flag = ref false
 let log_all = open_log_out "allinput.thy"
 (* let image_path_lst = ["MyImage"; "/usr/local/bin/MyImage"] *)
-let image_path_lst = [try FileUtil.which "MyImage" with Not_found -> ""]
+let image_path_lst = [try FileUtil.which "MyImage" with Not_found | Unix.Unix_error _ -> ""]
 let isabelle_image = ref "MyImage"
 let max_flag = ref false
 let choice = ref 1
@@ -281,7 +281,7 @@ let get_vars_formula p = List.map isabelle_of_spec_var (CP.fv p)
 
 let isabelle_of_var_list l = String.concat "" (List.map (fun s -> "ALL " ^ s ^ ". ") l)
 
-let isabelle_command isabelle_file_name = ("isabelle-process -I -r " ^ try FileUtil.which "MyImage" with Not_found -> "" ^ " < " ^ isabelle_file_name ^ " > res 2> /dev/null")
+let isabelle_command isabelle_file_name = ("isabelle-process -I -r " ^ try FileUtil.which "MyImage" with Not_found | Unix.Unix_error _ -> "" ^ " < " ^ isabelle_file_name ^ " > res 2> /dev/null")
 
 (*creates a new "isabelle-process " process*)
 let rec get_answer chn : string =
@@ -459,7 +459,7 @@ let building_image flag = begin
       flush root_file;
       close_out root_file;
     end;
-    ignore(Sys.command ("isabelle usedir -b HOL " ^ try FileUtil.which "MyImage" with Not_found -> ""));
+    ignore(Sys.command ("isabelle usedir -b HOL " ^ try FileUtil.which "MyImage" with Not_found | Unix.Unix_error _ -> ""));
   end
 end
 
