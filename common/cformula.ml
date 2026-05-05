@@ -294,6 +294,7 @@ and h_formula_data = {  h_formula_data_node : CP.spec_var;
                         h_formula_data_label : formula_label option;
                         h_formula_data_remaining_branches :  (formula_label list) option;
                         h_formula_data_pruning_conditions :  (CP.b_formula * formula_label list ) list;
+                        h_formula_data_type_params : typ list; (* type parameters, e.g. [T] in list[T] *)
                         h_formula_data_pos : loc }
 
 and h_formula_view = {  h_formula_view_node : CP.spec_var;
@@ -3584,6 +3585,7 @@ and h_subst sst (f : h_formula) =
                h_formula_data_label = lbl;
                h_formula_data_remaining_branches = ann;
                h_formula_data_pruning_conditions = pcond;
+               h_formula_data_type_params = tps;
                h_formula_data_pos = pos}) ->
     DataNode ({h_formula_data_node = CP.subst_var_par sst x;
                h_formula_data_name = c;
@@ -3599,6 +3601,7 @@ and h_subst sst (f : h_formula) =
                h_formula_data_label = lbl;
                h_formula_data_remaining_branches = ann;
                h_formula_data_pruning_conditions = List.map (fun (c,c2)-> (CP.b_apply_subs sst c,c2)) pcond;
+               h_formula_data_type_params = tps;
                h_formula_data_pos = pos})
   | ThreadNode ({h_formula_thread_node = x;
                  h_formula_thread_name = c;
@@ -3864,6 +3867,7 @@ and h_apply_one ((fr, t) as s : (CP.spec_var * CP.spec_var)) (f : h_formula) = m
                h_formula_data_label = lbl;
                h_formula_data_remaining_branches = ann;
                h_formula_data_pruning_conditions = pcond;
+               h_formula_data_type_params = tps;
                h_formula_data_pos = pos}) ->
     DataNode ({h_formula_data_node = subst_var s x;
                h_formula_data_name = c;
@@ -3879,6 +3883,7 @@ and h_apply_one ((fr, t) as s : (CP.spec_var * CP.spec_var)) (f : h_formula) = m
                h_formula_data_label = lbl;
                h_formula_data_remaining_branches = ann;
                h_formula_data_pruning_conditions = List.map (fun (c,c2)-> (CP.b_apply_one s c,c2)) pcond;
+               h_formula_data_type_params = tps;
                h_formula_data_pos = pos})
   | ThreadNode ({h_formula_thread_node = x;
                  h_formula_thread_resource = rsr;
@@ -15851,6 +15856,7 @@ and merge_two_nodes dn1 dn2 =
                h_formula_data_label = lb1;
                h_formula_data_remaining_branches = br1;
                h_formula_data_pruning_conditions = pc1;
+               h_formula_data_type_params = tps1;
                h_formula_data_pos = pos1 } -> (match dn2 with
       | DataNode { h_formula_data_node = dnsv2;
                    h_formula_data_name = n2;
@@ -15917,6 +15923,7 @@ and merge_two_nodes dn1 dn2 =
                                     | None -> br1
                                     | Some l2 -> Some (List.append l1 l2)));
                              h_formula_data_pruning_conditions = List.append pc1 pc2;
+                             h_formula_data_type_params = tps1;
                              h_formula_data_pos = no_pos } in
         if not_clashed then res else HFalse
       | HEmp -> dn1
@@ -16958,6 +16965,7 @@ let prepost_of_init_x (var:CP.spec_var) sort (args:CP.spec_var list) (lbl:formul
       h_formula_data_holes = [];
       h_formula_data_remaining_branches = None;
       h_formula_data_pruning_conditions = [];
+      h_formula_data_type_params = [];
       h_formula_data_label = None;
       h_formula_data_pos = pos})
   in
@@ -17049,6 +17057,7 @@ let prepost_of_finalize_x (var:CP.spec_var) sort (args:CP.spec_var list) (lbl:fo
       h_formula_data_holes = [];
       h_formula_data_remaining_branches = None;
       h_formula_data_pruning_conditions = [];
+      h_formula_data_type_params = [];
       h_formula_data_label = None;
       h_formula_data_pos = pos})
   in
@@ -18205,6 +18214,7 @@ let mkDataNode data_node data_name data_args pos =
       h_formula_data_holes = [];
       h_formula_data_remaining_branches = None;
       h_formula_data_pruning_conditions = [];
+      h_formula_data_type_params = [];
       h_formula_data_label = None;
       h_formula_data_pos = pos; }
 

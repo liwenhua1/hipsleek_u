@@ -1278,6 +1278,7 @@ module ForwardVerifier = struct
           CF.h_formula_data_label = None;
           CF.h_formula_data_remaining_branches = None;
           CF.h_formula_data_pruning_conditions = [];
+          CF.h_formula_data_type_params = [];
           CF.h_formula_data_pos = no_pos}) in
       let vheap = CF.formula_of_heap vdatanode no_pos in
       let vheap =
@@ -1465,7 +1466,7 @@ module ForwardVerifier = struct
         CF.h_formula_data_derv = false;
         CF.h_formula_data_split = SPLIT0;
         CF.h_formula_data_imm = Cpure.ConstAnn(Mutable);
-        CF.h_formula_data_param_imm = List.map 
+        CF.h_formula_data_param_imm = List.map
             (fun _ -> Cpure.ConstAnn(Mutable)) heap_args;
         (* (andreeac) to check: too weak *)
         CF.h_formula_data_perm = perm;
@@ -1477,6 +1478,7 @@ module ForwardVerifier = struct
         CF.h_formula_data_remaining_branches = None;
         CF.h_formula_data_pruning_conditions = [];
         CF.h_formula_data_label = None;
+        CF.h_formula_data_type_params = [];
         CF.h_formula_data_pos = no_pos}) in
     (*c let heap_form = CF.mkExists [ext_var] heap_node ext_null type_constr pos in*)
     (*If this is not a lock, level_f = true*)

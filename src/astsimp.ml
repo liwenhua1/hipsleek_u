@@ -8084,7 +8084,9 @@ and linearize_formula_x (prog : I.prog_decl)  (f0 : IF.formula) (tlist : spec_va
                      IF.h_formula_heap_ho_arguments = ho_exps;
                      IF.h_formula_heap_full = full;
                      IF.h_formula_heap_pos = pos;
+                     IF.h_formula_heap_type_params = raw_type_params;
                      IF.h_formula_heap_label = pi;} ->
+        let type_params_hf = List.map (fun t -> trans_type prog t pos) raw_type_params in
         (* expand the dereference heap node first *)
         let trans_f f tl = x_add trans_formula prog false [] false f tl false in
         let (tl, ho_args) = List.fold_left (fun (tl, r) a ->
@@ -8207,6 +8209,7 @@ and linearize_formula_x (prog : I.prog_decl)  (f0 : IF.formula) (tlist : spec_va
                 CF.h_formula_data_label = pi;
                 CF.h_formula_data_remaining_branches = None;
                 CF.h_formula_data_pruning_conditions = [];
+                CF.h_formula_data_type_params = type_params_hf;
                 CF.h_formula_data_pos = pos;}
             in
             let ptr_rel_pure_f = generate_pointer_relation_f prog rootptr rootptr_type_name in
@@ -8324,6 +8327,7 @@ and linearize_formula_x (prog : I.prog_decl)  (f0 : IF.formula) (tlist : spec_va
                              CF.h_formula_data_label = pi;
                              CF.h_formula_data_remaining_branches = None;
                              CF.h_formula_data_pruning_conditions = [];
+                             CF.h_formula_data_type_params = type_params_hf;
                              CF.h_formula_data_pos = pos;} in
               (* let new_h = x_add_1 Immutable.normalize_field_ann_heap_node new_h in *)
               let ptr_rel_fs = generate_pointer_relation_f prog v c in
@@ -11093,6 +11097,7 @@ and check_barrier_wf prog bd =
         CF.h_formula_data_holes =[];
         CF.h_formula_data_derv = false;
         CF.h_formula_data_split = SPLIT0;
+        CF.h_formula_data_type_params = [];
         CF.h_formula_data_pos = no_pos } in
     let p2 = CP.mkEqVarInt st_v st no_pos in
     let p = x_add_1 Mcpure.mix_of_pure (CP.mkAnd p2 perm no_pos) in
@@ -11795,6 +11800,7 @@ let plugin_inferred_iviews views iprog cprog=
           IF.h_formula_heap_ho_arguments = []; (* TODO:HO *)
           IF.h_formula_heap_pseudo_data = false;
           IF.h_formula_heap_label = None;
+          IF.h_formula_heap_type_params = [];
           IF.h_formula_heap_pos = pos}
       else hn
     | _ -> hn

@@ -179,6 +179,7 @@ and h_formula_heap = { h_formula_heap_node : (ident * primed);
                        h_formula_heap_arguments : P.exp list;
                        h_formula_heap_pseudo_data : bool;
                        h_formula_heap_label : formula_label option;
+                       h_formula_heap_type_params : typ list; (* type parameters, e.g. [T] in list[T] *)
                        h_formula_heap_pos : loc }
 
 and h_formula_thread = { h_formula_thread_node : (ident * primed);
@@ -204,6 +205,7 @@ and h_formula_heap2 = { h_formula_heap2_node : (ident * primed);
                         h_formula_heap2_ho_arguments : rflow_formula list;
                         h_formula_heap2_pseudo_data : bool;
                         h_formula_heap2_label : formula_label option;
+                        h_formula_heap2_type_params : typ list; (* type parameters, e.g. [T] in list[T] *)
                         h_formula_heap2_pos : loc }
 
 let mk_hrel id cl pos =
@@ -583,6 +585,7 @@ and mkHeapNode_x c id ho deref dr split i f inv pd perm hl hl_i ofl l=
              h_formula_heap_arguments = hl;
              h_formula_heap_ho_arguments = ho;
              h_formula_heap_label = ofl;
+             h_formula_heap_type_params = [];
              h_formula_heap_pos = l }
 
 and mkHeapNode  c id ho deref dr split i f inv pd perm hl hl_i ofl l=
@@ -604,7 +607,13 @@ and mkHeapNode2 c id ho deref dr split i f inv pd perm ohl hl_i ofl l =
               h_formula_heap2_arguments = ohl;
               h_formula_heap2_ho_arguments = ho;
               h_formula_heap2_label = ofl;
+              h_formula_heap2_type_params = [];
               h_formula_heap2_pos = l }
+
+and set_h_formula_type_params tps h = match h with
+  | HeapNode n -> HeapNode { n with h_formula_heap_type_params = tps }
+  | HeapNode2 n -> HeapNode2 { n with h_formula_heap2_type_params = tps }
+  | other -> other
 
 and pos_of_formula f0 = match f0 with
   | Base f -> f.formula_base_pos
@@ -1355,6 +1364,7 @@ and h_apply_one ((fr, t) as s : ((ident*primed) * (ident*primed))) (f : h_formul
                h_formula_heap_ho_arguments = ho_args;
                h_formula_heap_pseudo_data = ps_data;
                h_formula_heap_label = l;
+               h_formula_heap_type_params = tps;
                h_formula_heap_pos = pos}) ->
     let imm = apply_one_imm s imm in
     let imm_p = List.map (fun x -> apply_one_opt_imm s x) imm_p in
@@ -1377,6 +1387,7 @@ and h_apply_one ((fr, t) as s : ((ident*primed) * (ident*primed))) (f : h_formul
                    {ff with rflow_base = apply_one s ff.rflow_base; }) ho_args;
                h_formula_heap_pseudo_data = ps_data;
                h_formula_heap_label = l;
+               h_formula_heap_type_params = tps;
                h_formula_heap_pos = pos})
   | HeapNode2 ({h_formula_heap2_node = x;
                 h_formula_heap2_name = c;
@@ -1392,6 +1403,7 @@ and h_apply_one ((fr, t) as s : ((ident*primed) * (ident*primed))) (f : h_formul
                 h_formula_heap2_perm = perm; (*LDK*)
                 h_formula_heap2_pseudo_data = ps_data;
                 h_formula_heap2_label = l;
+                h_formula_heap2_type_params = tps2;
                 h_formula_heap2_pos= pos}) ->
     let imm = apply_one_imm s imm in
     let imm_p = List.map (fun x -> apply_one_opt_imm s x) imm_p in
@@ -1415,6 +1427,7 @@ and h_apply_one ((fr, t) as s : ((ident*primed) * (ident*primed))) (f : h_formul
                     {ff with rflow_base = apply_one s ff.rflow_base; }) ho_args;
                 h_formula_heap2_pseudo_data = ps_data;
                 h_formula_heap2_label = l;
+                h_formula_heap2_type_params = tps2;
                 h_formula_heap2_pos = pos})
   | ThreadNode ({ h_formula_thread_node = x;
                   h_formula_thread_name = c;
@@ -1670,6 +1683,7 @@ and h_apply_one_w_data_name ((fr, t) as s : ((ident*primed) * (ident*primed))) (
                  h_formula_heap_ho_arguments = ho_args;
                  h_formula_heap_pseudo_data = ps_data;
                  h_formula_heap_label = l;
+                 h_formula_heap_type_params = tps;
                  h_formula_heap_pos = pos}) ->
       let imm = apply_one_imm s imm in
       let perm1 = ( match perm with
@@ -1691,6 +1705,7 @@ and h_apply_one_w_data_name ((fr, t) as s : ((ident*primed) * (ident*primed))) (
                      { ff with rflow_base = apply_one_w_data_name s ff.rflow_base; }) ho_args;
                  h_formula_heap_pseudo_data = ps_data;
                  h_formula_heap_label = l;
+                 h_formula_heap_type_params = tps;
                  h_formula_heap_pos = pos})
     | HeapNode2 ({h_formula_heap2_node = x;
                   h_formula_heap2_name = c;
@@ -1706,6 +1721,7 @@ and h_apply_one_w_data_name ((fr, t) as s : ((ident*primed) * (ident*primed))) (
                   h_formula_heap2_perm = perm; (*LDK*)
                   h_formula_heap2_pseudo_data = ps_data;
                   h_formula_heap2_label = l;
+                  h_formula_heap2_type_params = tps2;
                   h_formula_heap2_pos= pos}) ->
       let imm = apply_one_imm s imm in
       let perm1 = match perm with
@@ -1727,6 +1743,7 @@ and h_apply_one_w_data_name ((fr, t) as s : ((ident*primed) * (ident*primed))) (
                       { ff with rflow_base = apply_one_w_data_name s ff.rflow_base; }) ho_args;
                   h_formula_heap2_pseudo_data =ps_data;
                   h_formula_heap2_label = l;
+                  h_formula_heap2_type_params = tps2;
                   h_formula_heap2_pos = pos})
     | ThreadNode ({ h_formula_thread_node = x;
                     h_formula_thread_name = c;
