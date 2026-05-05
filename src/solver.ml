@@ -10877,11 +10877,9 @@ and do_match_x prog estate l_node r_node rhs (rhs_matched_set:CP.spec_var list) 
     let rem_l_node, rem_r_node, l_args, r_args, l_param_ann, r_param_ann =
       match (l_node, r_node) with
       | (DataNode dnl, DataNode dnr) ->
-        (* Check type parameter compatibility: TypeVars unify with anything *)
+        (* Check type parameter compatibility: must be exactly equal *)
         let type_param_compatible tp1 tp2 =
-          match tp1, tp2 with
-          | TypeVar _, _ | _, TypeVar _ -> true
-          | _ -> tp1 = tp2
+          tp1 = tp2
         in
         let lhs_tps = dnl.CF.h_formula_data_type_params in
         let rhs_tps = dnr.CF.h_formula_data_type_params in

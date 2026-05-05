@@ -275,5 +275,5 @@ checkentail x::list[T]<tl = null> * y::list[U]<tl = null> |- true.
 // Test 74: linked lists
 checkentail x::list[T]<tl = y> * y::list[T]<tl = null> |- true.
 
-// Test 75: linked lists and type parameters
-checkentail x::list[T]<tl = y> * y::list[U]<tl = null> |- x::list[T]<tl = y> * y::list[T]<tl = null>.
+// Test 75: linked lists and type parameters - should be invalid without explicit U=T
+checkentail x::list[T]<tl = y> * y::list[U]<tl = null> |- false.
