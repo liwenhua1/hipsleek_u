@@ -10877,10 +10877,23 @@ and do_match_x prog estate l_node r_node rhs (rhs_matched_set:CP.spec_var list) 
     let rem_l_node, rem_r_node, l_args, r_args, l_param_ann, r_param_ann =
       match (l_node, r_node) with
       | (DataNode dnl, DataNode dnr) ->
-        (* Check type parameter compatibility: TypeVars unify with anything *)
+        (* Collect equalities between type variables from the LHS pure formula.
+           T=U in the pure part appears as SpecVar(TVar _, "T") = SpecVar(TVar _, "U"). *)
+        let type_var_equalities =
+          let pf = MCP.pure_of_mix l_p in
+          let rec collect f = match f with
+            | CP.BForm ((CP.Eq (CP.Var (CP.SpecVar (TVar _, n1, _), _),
+                                CP.Var (CP.SpecVar (TVar _, n2, _), _), _), _), _) ->
+              [(n1, n2)]
+            | CP.And (f1, f2, _) -> collect f1 @ collect f2
+            | _ -> []
+          in collect pf
+        in
         let type_param_compatible tp1 tp2 =
           match tp1, tp2 with
-          | TypeVar _, _ | _, TypeVar _ -> true
+          | TypeVar a, TypeVar b ->
+            a = b ||
+            List.exists (fun (n1, n2) -> (n1 = a && n2 = b) || (n1 = b && n2 = a)) type_var_equalities
           | _ -> tp1 = tp2
         in
         let lhs_tps = dnl.CF.h_formula_data_type_params in
