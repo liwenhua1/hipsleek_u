@@ -283,3 +283,6 @@ checkentail x::list[T]<tl = y> * y::list[U]<tl = null> & T=U |- x::list[T]<tl = 
 
 // Test 77: T=U does not help when RHS needs T=V (negative test — must fail)
 checkentail x::list[T]<tl = y> * y::list[U]<tl = null> & T=U |- x::list[T]<tl = y> * y::list[V]<tl = null>.
+
+// Test 78: T=U does not help when RHS needs T=V (negative test — must fail)
+checkentail x::list[T]<tl = y> * y::list[U]<tl = null> & T=U |- x::list[T]<tl = y> * y::list[V]<tl = null> & T=V.
