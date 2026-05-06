@@ -62,3 +62,32 @@ raised there, so the new handler is dead code on those machines.
 
 `String.lowercase` and `String.uppercase` were replaced with `String.lowercase_ascii` and
 `String.uppercase_ascii` throughout for OCaml 5.3 compatibility (commit `79f91967b`).
+
+## Type Variable Entailment Checking (Active Development)
+
+### Feature: polymorphic data declarations with type parameters
+
+Data declarations support type parameters, e.g. `data list[T] { ... }`. Entailment checking
+for separation logic formulas must account for these type parameters.
+
+**Key representation facts:**
+- Heap node type params stored in `CF.h_formula_data_type_params : typ list` as `TypeVar of ident` (e.g. `TypeVar "T"`)
+- Type variable equalities in the LHS pure formula (e.g. `& T=U`) appear as `CP.SpecVar(TVar _, "T") = CP.SpecVar(TVar _, "U")` — note the variable *name* carries the type var identity, not the `TVar` index
+- Use `MCP.pure_of_mix l_p` to extract a `CP.formula` from the LHS `mix_formula`
+
+**Fix: `src/solver.ml` around line 10880** (`match (l_node, r_node)` DataNode branch)
+
+Old code allowed any `TypeVar` to unify with anything:
+```ocaml
+| TypeVar _, _ | _, TypeVar _ -> true   (* too permissive *)
+```
+
+New code:
+1. Collects type variable equalities from the LHS pure formula by scanning for
+   `CP.Eq(CP.Var(SpecVar(TVar _, n1)), CP.Var(SpecVar(TVar _, n2)))` conjuncts
+2. `TypeVar a` is compatible with `TypeVar b` only if `a = b` or `(a,b)` (or `(b,a)`) appears in those equalities
+
+**Tests in `typetest.slk`:**
+- Test 75: `list[T] * list[U] |- list[T] * list[T]` → **Fail** (T ≠ U, no constraint)
+- Test 76: `list[T] * list[U] & T=U |- list[T] * list[T]` → **Valid** (T=U makes it hold)
+- Test 77: `list[T] * list[U] & T=U |- list[T] * list[V]` → **Fail** (T=U does not imply T=V)
