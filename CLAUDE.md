@@ -91,3 +91,34 @@ New code:
 - Test 75: `list[T] * list[U] |- list[T] * list[T]` → **Fail** (T ≠ U, no constraint)
 - Test 76: `list[T] * list[U] & T=U |- list[T] * list[T]` → **Valid** (T=U makes it hold)
 - Test 77: `list[T] * list[U] & T=U |- list[T] * list[V]` → **Fail** (T=U does not imply T=V)
+
+## Union/Intersection Type Narrowing in Entailment (Active Development)
+
+### Feature: subtype preserves constraints across union/intersection annotations
+
+**Problem:** `checkentail x:int & x > 0 |- x:int\/bool & x > 0` was failing with
+`TYPE ERROR 1: Found int\/boolean but expecting NUM`.
+
+**Root cause** (`src/typeinfer.ml`, function `unify_type_modify`, inner `unify`):
+When the found type `t1` (e.g., `Int` from LHS) is a subtype of the expected type `t2`
+(e.g., `Union(Int,Bool)` from the RHS annotation), the old code widened x's type to
+`Union(Int,Bool)`. Subsequent pure constraints like `x > 0` then failed because
+`Union(Int,Bool)` is not numeric.
+
+**Fix** (`src/typeinfer.ml:239`): When `sub_type t1 t2` and `t2` is `Union _` or
+`Intersection _`, keep the more specific found type `t1` instead of widening to `t2`:
+```ocaml
+if sub_type t1 t2 then (
+  match t2 with
+  | Union _ | Intersection _ -> (tlist, Some k1)  (* keep specific found type *)
+  | _ -> (tlist, Some k2))
+```
+
+**Why it is general:** applies to any found type being a subtype of any union or
+intersection annotation — not just `int` vs `int\/bool`. The narrower LHS type is
+always more informative than the compound RHS annotation.
+
+**Known pre-existing failures (unrelated):**
+- Test 38: `x:int |- x:NUM` — `NUM` is parsed as `TypeVar["NUM"]` instead of the
+  primitive `NUM` type (parser issue, not fixed here)
+- Test 39: `x:float |- x:NUM` — same parser issue
