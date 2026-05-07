@@ -835,8 +835,8 @@ struct
     | Float, NUM        -> true
     | Union(t1, t2), t -> sub_type t1 t && sub_type t2 t
     | t, Union(t1, t2) -> sub_type t t1 || sub_type t t2  
-    | Intersection(t1, t2), t -> sub_type t1 t && sub_type t2 t
-    | t, Intersection(t1, t2) -> sub_type t t1 || sub_type t t2
+    | Intersection(t1, t2), t -> sub_type t1 t || sub_type t2 t
+    | t, Intersection(t1, t2) -> sub_type t t1 && sub_type t t2
     | p1, p2 -> p1=p2
   ;;
 end;;
@@ -1187,8 +1187,8 @@ struct
     | Float, NUM        -> true
     | Union(t1, t2), t -> sub_type t1 t && sub_type t2 t
     | t, Union(t1, t2) -> sub_type t t1 || sub_type t t2  
-    | Intersection(t1, t2), t -> sub_type t1 t && sub_type t2 t
-    | t, Intersection(t1, t2) -> sub_type t t1 || sub_type t t2
+    | Intersection(t1, t2), t -> sub_type t1 t || sub_type t2 t
+    | t, Intersection(t1, t2) -> sub_type t t1 && sub_type t t2
     | p1, p2 -> p1=p2
   ;;
 end;;
