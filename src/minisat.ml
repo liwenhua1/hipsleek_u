@@ -25,7 +25,7 @@ let log_file = open_log_out ("allinput.minisat")
 let minisat_input_mode = "file"    (* valid value is: "file" or "stdin" *) 
 
 (*minisat*)
-let minisat_path = try FileUtil.which "minisat" with Not_found -> ""
+let minisat_path = try FileUtil.which "minisat" with Not_found | Unix.Unix_error _ -> ""
 let minisat_name = "minisat"
 let minisat_arg = "-pre"(*"-pre"*)
 

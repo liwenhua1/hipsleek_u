@@ -278,5 +278,11 @@ checkentail x::list[T]<tl = y> * y::list[T]<tl = null> |- true.
 // Test 75: linked lists and type parameters
 checkentail x::list[T]<tl = y> * y::list[U]<tl = null> |- x::list[T]<tl = y> * y::list[T]<tl = null>.
 
-// Test 76: linked lists and type parameters and unification 
+// Test 76: linked lists and type parameters and unification
 checkentail x::list[T]<tl = y> * y::list[U]<tl = null> & T=U|- x::list[T]<tl = y> * y::list[T]<tl = null>.
+
+// Test 77: T=U does not help when RHS needs T=V (negative test — must fail)
+checkentail x::list[T]<tl = y> * y::list[U]<tl = null> & T=U |- x::list[T]<tl = y> * y::list[V]<tl = null>.
+
+// Test 78: T=U does not help when RHS needs T=V (negative test — must fail)
+checkentail x::list[T]<tl = y> * y::list[U]<tl = null> & T=U |- x::list[T]<tl = y> * y::list[V]<tl = null> & T=V.

@@ -8718,6 +8718,49 @@ and heap_entail_empty_rhs_heap_x (prog : prog_decl) conseq (is_folding : bool)  
       (safe_exc ())
   in res
 
+(* Collect equalities between type variables from a pure formula.
+   T=U appears as Eq(Var(SpecVar(TVar _, "T")), Var(SpecVar(TVar _, "U"))). *)
+and collect_tvar_eqs_from_pure pf =
+  let rec collect f = match f with
+    | CP.BForm ((CP.Eq (CP.Var (CP.SpecVar (TVar _, n1, _), _),
+                        CP.Var (CP.SpecVar (TVar _, n2, _), _), _), _), _) ->
+      [(n1, n2)]
+    | CP.And (f1, f2, _) -> collect f1 @ collect f2
+    | _ -> []
+  in collect pf
+
+(* BFS to find all type variable names equivalent to 'name' under the given raw equality pairs. *)
+and tvar_equiv raw_eqs name =
+  let rec bfs visited = function
+    | [] -> visited
+    | n :: rest ->
+      if List.mem n visited then bfs visited rest
+      else
+        let neighbors = List.filter_map
+          (fun (a, b) -> if a = n then Some b else if b = n then Some a else None)
+          raw_eqs
+        in
+        bfs (n :: visited) (neighbors @ rest)
+  in
+  bfs [] [name]
+
+(* Remove type variable equalities from a pure formula that are already satisfied
+   by the given equivalence relation.  Satisfied equalities are replaced with true
+   so the downstream pure prover does not need to re-prove them. *)
+and strip_sat_tvar_eqs_from_pure raw_eqs pf =
+  let rec strip f = match f with
+    | CP.BForm ((CP.Eq (CP.Var (CP.SpecVar (TVar _, n1, _), _),
+                        CP.Var (CP.SpecVar (TVar _, n2, _), _), _), _), _) ->
+      if List.mem n2 (tvar_equiv raw_eqs n1) then CP.mkTrue no_pos else f
+    | CP.And (f1, f2, p) -> CP.mkAnd (strip f1) (strip f2) p
+    | _ -> f
+  in strip pf
+
+and strip_sat_tvar_eqs_from_mix raw_eqs mf =
+  match mf with
+  | MCP.OnePF pf -> MCP.OnePF (strip_sat_tvar_eqs_from_pure raw_eqs pf)
+  | MCP.MemoF _ -> mf (* leave memo formulas untouched *)
+
 and heap_entail_empty_rhs_heap_one_flow (prog : prog_decl) conseq (is_folding : bool)  estate_orig lhs (rhs_p:MCP.mix_formula) rhs_matched_set pos : (list_context * proof) =
   (* An Hoa note: RHS has no heap so that we only have to consider whether "pure of LHS" |- RHS *)
   let rel_w_defs = List.filter (fun rel -> not (CP.isConstTrue rel.Cast.rel_formula)) (prog.Cast.prog_rel_decls # get_stk) in
@@ -8733,6 +8776,18 @@ and heap_entail_empty_rhs_heap_one_flow (prog : prog_decl) conseq (is_folding : 
   (* Changed for merge.ss on 9/3/2013 *)
   let lhs_p = if not (estate_orig.es_infer_rel # is_empty_recent) then subst_rel_by_def_mix rel_w_defs lhs_p else lhs_p in
   let () = x_tinfo_hp (add_str "lhs_p(1)" pr_mf) lhs_p no_pos in
+  (* Strip type variable equalities from rhs_p that are satisfied by the combined
+     LHS+RHS type variable equivalence class.  This handles RHS type variables
+     that are existentially quantified (e.g. T=V when V is fresh on the RHS):
+     the heap check already instantiated them, so the pure checker need not re-prove them. *)
+  let rhs_p =
+    let raw_eqs =
+      collect_tvar_eqs_from_pure (MCP.pure_of_mix lhs_p) @
+      collect_tvar_eqs_from_pure (MCP.pure_of_mix rhs_p)
+    in
+    if raw_eqs = [] then rhs_p
+    else strip_sat_tvar_eqs_from_mix raw_eqs rhs_p
+  in
   (* memo slices that may not have been unsat *)
   let lhs_t = lhs.formula_base_type in
   let lhs_fl = lhs.formula_base_flow in

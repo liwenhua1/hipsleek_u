@@ -236,7 +236,12 @@ and unify_type_modify (modify_flag:bool) (k1 : spec_var_kind) (k2 : spec_var_kin
         if is_null_type t1 then (tlist, Some k2)
         else if is_null_type t2 then (tlist, Some k1)
         else
-        if sub_type t1 t2 then (tlist, Some k2)  (* found t1, but expecting t2 *)
+        if sub_type t1 t2 then (
+          (* When expected type is a compound (Union/Intersection), keep the more
+             specific found type so subsequent constraints can still narrow it. *)
+          match t2 with
+          | Union _ | Intersection _ -> (tlist, Some k1)
+          | _ -> (tlist, Some k2))
         else if sub_type t2 t1 then (tlist,Some k1)
         else
           begin
