@@ -478,6 +478,7 @@ let common_arguments = [
   ("--memset-opt", Arg.Set Globals.ineq_opt_flag,"to optimize the inequality set enable");
   ("--dis-field-imm", Arg.Clear Globals.allow_field_ann,"disable the use of immutability annotations for data fields");
   ("--allow-array-inst", Arg.Set Globals.allow_array_inst,"Allow instantiation of existential arrays");
+  ("--smt-subtype", Arg.Set Globals.use_smt_subtype, "Use SMT (Z3) for union/intersection subtype checking instead of structural decomposition");
   ("--en-remove-abs", Arg.Set Globals.remove_abs,"remove @A nodes from formula (incl nodes with all fields ann with @A)");
   ("--dis-remove-abs", Arg.Clear Globals.remove_abs,"disable removing @A nodes from formula (incl nodes with all fields ann with @A)");
   ("--en-imm-merge", Arg.Set Globals.imm_merge,"try to merge aliased nodes");

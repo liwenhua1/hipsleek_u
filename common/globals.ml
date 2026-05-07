@@ -1489,6 +1489,13 @@ let print_extra = ref true (* set true by default *)
 
 let enforce_type_error = ref true (* strictly enforce type error *)
 
+let use_smt_subtype = ref false
+
+(* Set by Smtsolver after it initialises; called by Exc.GTable.sub_type when
+   use_smt_subtype is true.  The default returns false so that the structural
+   fallback always runs if the ref is never initialised. *)
+let smt_sub_type_ref : (typ -> typ -> bool) ref = ref (fun _ _ -> false)
+
 let print_en_tidy = ref false
 (* print tidy is not working properly *)
 

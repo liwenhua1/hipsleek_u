@@ -815,29 +815,35 @@ struct
         end
     end
   let exlist = new exc
-  let rec sub_type (t1 : typ) (t2 : typ) = 
+  let rec sub_type_structural (t1 : typ) (t2 : typ) =
     match t1,t2 with
     | UNK, _ -> true
-    | Named (c1, _), Named (c2, _) -> 
+    | Named (c1, _), Named (c2, _) ->
       if c1=c2 then true
       else if c1="" then true
-      else 
+      else
         begin
           Debug.ninfo_zprint (lazy (exlist#string_of)) no_pos ;
           exlist # sub_type_obj c1 c2
         end
     | Array (et1,d1), Array (et2,d2) ->
-      if (d1 = d2) then sub_type et1 et2
+      if (d1 = d2) then sub_type_structural et1 et2
       else false
-    | BagT et1, BagT et2 -> sub_type et1 et2
-    | List et1, List et2 -> sub_type et1 et2
+    | BagT et1, BagT et2 -> sub_type_structural et1 et2
+    | List et1, List et2 -> sub_type_structural et1 et2
     | Int, NUM        -> true
     | Float, NUM        -> true
-    | Union(t1, t2), t -> sub_type t1 t && sub_type t2 t
-    | t, Union(t1, t2) -> sub_type t t1 || sub_type t t2  
-    | Intersection(t1, t2), t -> sub_type t1 t || sub_type t2 t
-    | t, Intersection(t1, t2) -> sub_type t t1 && sub_type t t2
+    | Union(t1, t2), t -> sub_type_structural t1 t && sub_type_structural t2 t
+    | t, Union(t1, t2) -> sub_type_structural t t1 || sub_type_structural t t2
+    | Intersection(t1, t2), t -> sub_type_structural t1 t || sub_type_structural t2 t
+    | t, Intersection(t1, t2) -> sub_type_structural t t1 && sub_type_structural t t2
     | p1, p2 -> p1=p2
+
+  and sub_type (t1 : typ) (t2 : typ) =
+    if !Globals.use_smt_subtype then
+      !Globals.smt_sub_type_ref t1 t2
+    else
+      sub_type_structural t1 t2
   ;;
 end;;
 

@@ -122,3 +122,126 @@ always more informative than the compound RHS annotation.
 - Test 38: `x:int |- x:NUM` — `NUM` is parsed as `TypeVar["NUM"]` instead of the
   primitive `NUM` type (parser issue, not fixed here)
 - Test 39: `x:float |- x:NUM` — same parser issue
+- Test 66: `x:int/\str |- x:int/\str` — structural `sub_type` incorrectly rejects
+  `Intersection(A,B) ≤ Intersection(A,B)` when A and B are unrelated (see SMT section).
+  Fixed by `--smt-subtype`.
+
+## SMT-Based Subtype Checking (Alternative Mode)
+
+### Overview
+
+An alternative subtype checker uses Z3 directly instead of the recursive structural
+decomposition. Enable it with:
+
+```bash
+dune exec ./sleek.exe -- --smt-subtype <file.slk>
+```
+
+### Key files
+
+| File | Role |
+|------|------|
+| `common/globals.ml` | `use_smt_subtype : bool ref` flag; `smt_sub_type_ref : (typ → typ → bool) ref` indirection |
+| `common/smtsolver.ml` | `smt_sub_type` implementation; wires itself into `smt_sub_type_ref` at module load |
+| `common/exc.ml` | `sub_type` dispatches to SMT or structural; internal recursion is `sub_type_structural` |
+| `src/scriptarguments.ml` | `--smt-subtype` CLI flag registration |
+
+### Why a ref indirection
+
+`exc.ml` must not import `smtsolver.ml` (it would create a circular dependency since
+`smtsolver.ml` transitively depends on `cpure.ml` which depends on things below `exc.ml`
+in the build order). The solution: `globals.ml` holds a `smt_sub_type_ref` initialised
+to `fun _ _ -> false`; `smtsolver.ml` overwrites it with the real implementation at
+module initialisation (`let () = Globals.smt_sub_type_ref := smt_sub_type`).
+
+### SMT encoding
+
+The core idea: interpret each type `T` as the **set of values** inhabiting it.
+Subtyping `T1 ≤ T2` is set inclusion. To check it, negate and ask Z3:
+
+> Is `∃ witness. encode(T1, witness) ∧ ¬encode(T2, witness)` satisfiable?
+> UNSAT → T1 ≤ T2.   SAT → T1 ≢ T2.
+
+**Type encoding** (`encode T witness` produces an SMT Boolean expression):
+
+```
+encode(Int,                v) = (is_Int v)
+encode(Bool,               v) = (is_Bool v)
+encode(Float,              v) = (is_Float v)
+encode(NUM,                v) = (is_NUM v)
+encode(Void,               v) = (is_Void v)
+encode(TypeVar "X",        v) = (is_TypeVar_X v)     -- uninterpreted predicate
+encode(Named("C", _),      v) = (is_Named_C v)        -- uninterpreted predicate
+encode(Union(A, B),        v) = (or  (encode A v) (encode B v))
+encode(Intersection(A, B), v) = (and (encode A v) (encode B v))
+```
+
+Compound types are inlined — no recursive SMT function needed.
+
+**Full query skeleton** (sent via `check_formula` into the running Z3 process):
+
+```smt2
+(declare-sort SMTValue 0)
+
+; One uninterpreted predicate per leaf type that appears in T1 or T2
+(declare-fun is_Int   (SMTValue) Bool)
+(declare-fun is_Bool  (SMTValue) Bool)
+(declare-fun is_Float (SMTValue) Bool)
+(declare-fun is_NUM   (SMTValue) Bool)
+; ... TypeVar and Named predicates as needed ...
+
+; Inhabitedness: every leaf type has at least one value
+(declare-const smt_wit_is_Int   SMTValue) (assert (is_Int   smt_wit_is_Int))
+(declare-const smt_wit_is_Bool  SMTValue) (assert (is_Bool  smt_wit_is_Bool))
+; ...
+
+; Primitive subtype axioms
+(assert (forall ((v SMTValue)) (=> (is_Int   v) (is_NUM v))))
+(assert (forall ((v SMTValue)) (=> (is_Float v) (is_NUM v))))
+
+; Disjointness: the witness of one base type does not belong to another
+(assert (not (is_Bool  smt_wit_is_Int)))
+(assert (not (is_Int   smt_wit_is_Bool)))
+; ... all known disjoint pairs ...
+
+; Negated subtype query
+(declare-const smt_sub_witness SMTValue)
+(assert (and <encode T1 smt_sub_witness>
+             (not <encode T2 smt_sub_witness>)))
+(check-sat)
+```
+
+The query is wrapped with `(push)/(pop)` by `check_formula` so it does not pollute the
+incremental Z3 session state.
+
+**TypeVar equality constraints** (future extension): if the LHS pure formula contains
+`T = U`, assert `(forall ((v SMTValue)) (= (is_TypeVar_T v) (is_TypeVar_U v)))` before
+the negated query. This lets Z3 prove `list[T] * list[U] & T=U |- list[T] * list[V]`
+correctly without relying on name-equality heuristics.
+
+### Structural algorithm incompleteness (why SMT gives different results)
+
+The structural `sub_type_structural` uses OCaml pattern matching. When **both** sides
+are `Intersection`, the left-intersection pattern fires first:
+
+```ocaml
+| Intersection(t1, t2), t -> sub_type_structural t1 t || sub_type_structural t2 t
+```
+
+For `Intersection(A,B) ≤ Intersection(A,B)` this expands to:
+```
+(A ≤ Intersection(A,B)) ∨ (B ≤ Intersection(A,B))
+= ((A≤A)∧(A≤B)) ∨ ((B≤A)∧(B≤B))
+```
+which is `false` when `A` and `B` are unrelated types (e.g. `Int` and `Named "str"`),
+even though the relation is trivially reflexive.
+
+The SMT encoding is immune to this because `encode(T,v) ∧ ¬encode(T,v)` is always UNSAT
+by propositional tautology, regardless of the structure of `T`.
+
+**Verified comparison** (full `typetest.slk` run): all 78 tests give identical verdicts
+between structural and SMT modes **except Test 66**, where:
+- Structural: `EXCast / UNIFICATION ERROR: types int/\str and int/\str are inconsistent`
+- SMT (`--smt-subtype`): `Valid`
+
+The SMT result is correct. Test 66 is the only test where the two modes disagree.

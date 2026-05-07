@@ -1352,11 +1352,118 @@ let imply ante conseq timeout =
 let imply ante conseq timeout =
   Gen.Profiling.no_3 "smt_imply" imply ante conseq timeout
 
-let imply_ops pr_weak pr_strong ante conseq timeout = 
+let imply_ops pr_weak pr_strong ante conseq timeout =
   let f = x_add smt_imply pr_weak pr_strong ante conseq Z3 timeout in
   (*let () = print_endline ("Ante2 : "^ !print_pure ante) in*)
   if (not f && !Globals.allow_array_inst) then instantiate_array_vars_before_imply pr_weak pr_strong ante conseq Z3 timeout
   else f
+
+(***************************************************************
+         SMT-BASED SUBTYPE CHECKING FOR UNION/INTERSECTION
+ **************************************************************)
+
+(* Collect all leaf (non-compound) types from a type expression. *)
+let rec collect_base_types (t : Globals.typ) : Globals.typ list =
+  match t with
+  | Globals.Union (a, b) | Globals.Intersection (a, b) ->
+    collect_base_types a @ collect_base_types b
+  | _ -> [t]
+
+(* Deduplicate a list preserving first occurrence. *)
+let dedup_types (ts : Globals.typ list) : Globals.typ list =
+  List.fold_right
+    (fun t acc -> if List.mem t acc then acc else t :: acc)
+    ts []
+
+(* Stable, collision-free SMT predicate name for a leaf type. *)
+let pred_name_of_typ (t : Globals.typ) : string =
+  match t with
+  | Globals.Int         -> "is_Int"
+  | Globals.Bool        -> "is_Bool"
+  | Globals.Float       -> "is_Float"
+  | Globals.NUM         -> "is_NUM"
+  | Globals.Void        -> "is_Void"
+  | Globals.TypeVar s   -> "is_TypeVar_" ^ s
+  | Globals.Named (n,_) -> "is_Named_" ^ n
+  | Globals.UNK         -> "is_UNK"
+  | _                   -> "is_Other"
+
+(* Encode a type as an SMT Boolean expression over variable [witness]. *)
+let rec encode_typ (t : Globals.typ) (witness : string) : string =
+  match t with
+  | Globals.Union (a, b) ->
+    "(or " ^ encode_typ a witness ^ " " ^ encode_typ b witness ^ ")"
+  | Globals.Intersection (a, b) ->
+    "(and " ^ encode_typ a witness ^ " " ^ encode_typ b witness ^ ")"
+  | _ ->
+    "(" ^ pred_name_of_typ t ^ " " ^ witness ^ ")"
+
+(* Pairs (sub, super) among known primitive types. *)
+let primitive_subtype_edges : (Globals.typ * Globals.typ) list =
+  [ (Globals.Int, Globals.NUM); (Globals.Float, Globals.NUM) ]
+
+(* Pairs of primitive types that are disjoint (no shared values). *)
+let primitive_disjoint_pairs : (Globals.typ * Globals.typ) list =
+  [ (Globals.Int,   Globals.Bool);
+    (Globals.Int,   Globals.Float);
+    (Globals.Int,   Globals.Void);
+    (Globals.Bool,  Globals.Float);
+    (Globals.Bool,  Globals.Void);
+    (Globals.Bool,  Globals.NUM);
+    (Globals.Float, Globals.Void);
+    (Globals.NUM,   Globals.Void) ]
+
+(* Check t1 <= t2 by asking Z3: is (exists v. t1(v) /\ ~t2(v)) UNSAT?
+   Returns true when the negation is UNSAT, i.e. t1 is a subtype of t2. *)
+let smt_sub_type (t1 : Globals.typ) (t2 : Globals.typ) : bool =
+  let bases = dedup_types (collect_base_types t1 @ collect_base_types t2) in
+  let buf = Buffer.create 512 in
+  (* Universe sort *)
+  Buffer.add_string buf "(declare-sort SMTValue 0)\n";
+  (* One uninterpreted predicate per leaf type *)
+  List.iter (fun t ->
+    Buffer.add_string buf
+      ("(declare-fun " ^ pred_name_of_typ t ^ " (SMTValue) Bool)\n")
+  ) bases;
+  (* Inhabitedness: each leaf type has a concrete witness constant *)
+  List.iter (fun t ->
+    let w = "smt_wit_" ^ pred_name_of_typ t in
+    Buffer.add_string buf ("(declare-const " ^ w ^ " SMTValue)\n");
+    Buffer.add_string buf ("(assert (" ^ pred_name_of_typ t ^ " " ^ w ^ "))\n")
+  ) bases;
+  (* Primitive subtype axioms (only when both sides are present) *)
+  List.iter (fun (sub, sup) ->
+    if List.mem sub bases && List.mem sup bases then
+      Buffer.add_string buf
+        ("(assert (forall ((v SMTValue)) (=> (" ^ pred_name_of_typ sub
+         ^ " v) (" ^ pred_name_of_typ sup ^ " v))))\n")
+  ) primitive_subtype_edges;
+  (* Disjointness: the witness of ta is not a member of tb and vice versa *)
+  List.iter (fun (ta, tb) ->
+    if List.mem ta bases && List.mem tb bases then begin
+      Buffer.add_string buf
+        ("(assert (not (" ^ pred_name_of_typ tb
+         ^ " smt_wit_" ^ pred_name_of_typ ta ^ ")))\n");
+      Buffer.add_string buf
+        ("(assert (not (" ^ pred_name_of_typ ta
+         ^ " smt_wit_" ^ pred_name_of_typ tb ^ ")))\n")
+    end
+  ) primitive_disjoint_pairs;
+  (* Negated subtype query: witness in T1 but not T2 *)
+  Buffer.add_string buf "(declare-const smt_sub_witness SMTValue)\n";
+  Buffer.add_string buf
+    ("(assert (and " ^ encode_typ t1 "smt_sub_witness"
+     ^ " (not " ^ encode_typ t2 "smt_sub_witness" ^ ")))\n");
+  Buffer.add_string buf "(check-sat)\n";
+  let query = Buffer.contents buf in
+  let output = check_formula query 5.0 in
+  match output.sat_result with
+  | UnSat -> true   (* no counterexample: T1 <= T2 *)
+  | _     -> false  (* counterexample exists or unknown *)
+
+(* Register the implementation into the Globals ref so Exc can call it
+   without creating a circular module dependency. *)
+let () = Globals.smt_sub_type_ref := smt_sub_type
 
 (*
 let imply_ops pr_weak pr_strong ante conseq timeout = 
